@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CheckSquare } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 
 const VerifyEmailPage = () => {
@@ -24,23 +24,25 @@ const VerifyEmailPage = () => {
   };
 
   return (
-    <div className="flex h-full flex-col bg-background safe-area-top px-6">
-      <button onClick={() => navigate(-1)} className="mb-8 mt-4 self-start p-1">
-        <ArrowLeft className="h-6 w-6 text-foreground" />
-      </button>
+    <div className="flex h-full flex-col bg-background safe-area-top">
+      <div className="px-6">
+        <button onClick={() => navigate(-1)} className="mb-6 mt-3 self-start p-1.5 rounded-full hover:bg-secondary transition-colors">
+          <ArrowLeft className="h-5 w-5 text-foreground" />
+        </button>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center"
+        className="flex flex-col items-center px-6"
       >
-        <div className="mb-6 rounded-2xl bg-primary/10 p-4">
-          <CheckSquare className="h-8 w-8 text-primary" />
+        <div className="mb-5 rounded-2xl bg-primary/10 p-4">
+          <ShieldCheck className="h-7 w-7 text-primary" />
         </div>
 
         <h1 className="text-2xl font-bold text-foreground">Verify your email</h1>
-        <p className="mt-2 text-center text-sm text-muted-foreground">
-          We've sent 4 digit code on{"\n"}Your Email
+        <p className="mt-2 text-center text-sm text-muted-foreground leading-relaxed">
+          We've sent a 4 digit code to{"\n"}your email address
         </p>
 
         <div className="mt-10 flex gap-4">
@@ -54,7 +56,7 @@ const VerifyEmailPage = () => {
               value={digit}
               onChange={(e) => handleChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
-              className="h-16 w-16 rounded-2xl border border-border bg-secondary/50 text-center text-2xl font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+              className="h-16 w-16 rounded-2xl border-2 border-border bg-secondary/30 text-center text-2xl font-bold text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
             />
           ))}
         </div>

@@ -10,47 +10,44 @@ const SignUpPage = () => {
   const [email, setEmail] = useState("");
 
   return (
-    <div className="flex h-full flex-col bg-background safe-area-top px-6">
-      <button onClick={() => navigate(-1)} className="mb-8 mt-4 self-start p-1">
-        <ArrowLeft className="h-6 w-6 text-foreground" />
-      </button>
+    <div className="flex h-full flex-col bg-background safe-area-top">
+      <div className="px-6">
+        <button onClick={() => navigate(-1)} className="mb-6 mt-3 self-start p-1.5 rounded-full hover:bg-secondary transition-colors">
+          <ArrowLeft className="h-5 w-5 text-foreground" />
+        </button>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center"
+        className="flex flex-1 flex-col items-center px-6"
       >
-        <div className="mb-6 rounded-2xl bg-primary/10 p-4">
-          <UserPlus className="h-8 w-8 text-primary" />
+        <div className="mb-5 rounded-2xl bg-primary/10 p-4">
+          <UserPlus className="h-7 w-7 text-primary" />
         </div>
 
         <h1 className="text-2xl font-bold text-foreground">Create an account</h1>
-        <p className="mt-2 text-center text-sm text-muted-foreground">
+        <p className="mt-2 text-center text-sm text-muted-foreground leading-relaxed">
           To get personal perks, book your table{"\n"}and create your memories with us
         </p>
 
-        <div className="mt-10 w-full space-y-4">
+        <div className="mt-8 w-full space-y-3.5">
           <Input
             type="email"
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-14 rounded-2xl border-border bg-secondary/50 px-5 text-center"
+            className="h-14 rounded-2xl bg-secondary/50 px-5 text-center focus:ring-1 focus:ring-primary/20"
           />
 
-          <Button
-            variant="cta"
-            size="lg"
-            className="w-full"
-            onClick={() => navigate("/verify")}
-          >
+          <Button variant="cta" size="lg" className="w-full" onClick={() => navigate("/verify")}>
             Next
           </Button>
         </div>
 
-        <div className="my-8 flex w-full items-center gap-4">
+        <div className="my-7 flex w-full items-center gap-4">
           <div className="h-px flex-1 bg-border" />
-          <span className="text-sm text-muted-foreground">Or</span>
+          <span className="text-xs text-muted-foreground font-medium">Or</span>
           <div className="h-px flex-1 bg-border" />
         </div>
 
@@ -73,7 +70,7 @@ const SignUpPage = () => {
           </Button>
         </div>
 
-        <p className="mt-auto mb-8 text-sm text-muted-foreground">
+        <p className="mt-auto mb-10 text-sm text-muted-foreground">
           Already have an account?{" "}
           <button className="font-semibold text-primary" onClick={() => navigate("/home")}>
             log in
