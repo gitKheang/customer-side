@@ -13,6 +13,7 @@ import HomePage from "@/pages/HomePage";
 import SearchPage from "@/pages/SearchPage";
 import RestaurantDetailPage from "@/pages/RestaurantDetailPage";
 import BookTablePage from "@/pages/BookTablePage";
+import BookingConfirmationPage from "@/pages/BookingConfirmationPage";
 import BookingHistoryPage from "@/pages/BookingHistoryPage";
 import RewardsPage from "@/pages/RewardsPage";
 import ProfilePage from "@/pages/ProfilePage";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/search" element={<SearchPage />} />
             <Route path="/restaurant/:id" element={<RestaurantDetailPage />} />
             <Route path="/book/:id" element={<BookTablePage />} />
+            <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/rewards" element={<RewardsPage />} />
             <Route path="/history" element={<BookingHistoryPage />} />
