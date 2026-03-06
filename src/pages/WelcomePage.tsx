@@ -9,17 +9,14 @@ const slides = [
   {
     title: "Book Your Table\nInstantly",
     subtitle: "Find restaurants, check real-time availability, and lock in your spot instantly.",
-    icon: Utensils,
   },
   {
     title: "Discover Amazing\nRestaurants",
     subtitle: "Browse curated restaurants near you with reviews, menus, and photos.",
-    icon: CalendarDays,
   },
   {
     title: "Never Wait\nIn Line Again",
     subtitle: "Reserve your table in seconds and arrive to a seat ready for you.",
-    icon: Clock,
   },
 ];
 
@@ -32,20 +29,18 @@ const WelcomePage = () => {
       <div className="relative h-[55%] overflow-hidden">
         <img src={heroImage} alt="Restaurant" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
-        <div className="absolute bottom-16 left-8 right-8 flex justify-center gap-3">
-          {[Utensils, CalendarDays, Clock].map((Icon, i) => (
+        <div className="absolute bottom-14 left-0 right-0 flex justify-center gap-4">
+          {[
+            { Icon: Utensils, bg: "bg-primary", shadow: "shadow-primary/30" },
+            { Icon: CalendarDays, bg: "bg-destructive", shadow: "shadow-destructive/30" },
+            { Icon: Clock, bg: "bg-warning", shadow: "shadow-warning/30" },
+          ].map(({ Icon, bg, shadow }, i) => (
             <motion.div
               key={i}
-              initial={{ scale: 0, y: 20 }}
+              initial={{ scale: 0, y: 30 }}
               animate={{ scale: 1, y: 0 }}
-              transition={{ delay: 0.2 + i * 0.15 }}
-              className={`rounded-2xl p-3 shadow-lg ${
-                i === 0
-                  ? "bg-primary text-primary-foreground"
-                  : i === 1
-                  ? "bg-destructive text-destructive-foreground"
-                  : "bg-warning text-warning-foreground"
-              }`}
+              transition={{ delay: 0.3 + i * 0.12, type: "spring", stiffness: 260, damping: 20 }}
+              className={`rounded-2xl p-3.5 shadow-lg ${bg} ${shadow} text-background`}
             >
               <Icon className="h-6 w-6" />
             </motion.div>
@@ -53,31 +48,32 @@ const WelcomePage = () => {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-between px-8 pb-8 pt-4">
+      <div className="flex flex-1 flex-col items-center justify-between px-8 pb-10 pt-5">
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            exit={{ opacity: 0, x: -30 }}
+            transition={{ duration: 0.25 }}
             className="text-center"
           >
-            <h1 className="text-3xl font-bold leading-tight text-foreground whitespace-pre-line">
+            <h1 className="text-[28px] font-bold leading-tight text-foreground whitespace-pre-line">
               {slides[current].title}
             </h1>
-            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">
               {slides[current].subtitle}
             </p>
           </motion.div>
         </AnimatePresence>
 
-        <div className="flex items-center gap-2 my-4">
+        <div className="flex items-center gap-2 my-3">
           {slides.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrent(i)}
-              className={`h-1.5 rounded-full transition-all ${
-                i === current ? "w-6 bg-primary" : "w-1.5 bg-border"
+              className={`rounded-full transition-all duration-300 ${
+                i === current ? "w-7 h-2 bg-primary" : "w-2 h-2 bg-border"
               }`}
             />
           ))}

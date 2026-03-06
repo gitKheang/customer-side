@@ -5,7 +5,6 @@ import { mockRestaurants } from "@/data/mockData";
 import BottomNav from "@/components/BottomNav";
 import FilterSheet from "@/components/FilterSheet";
 import { motion } from "framer-motion";
-import foodImage from "@/assets/food-avocado-toast.jpg";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -24,60 +23,61 @@ const HomePage = () => {
 
   return (
     <div className="relative flex h-full flex-col bg-background">
-      {/* Status bar area */}
       <div className="safe-area-top" />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pb-2">
+      <div className="flex items-center justify-between px-5 pb-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-secondary overflow-hidden">
-            <div className="h-full w-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center text-sm font-bold text-primary">W</div>
+          <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-bold text-primary ring-2 ring-primary/10">
+            W
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">Good evening!</h1>
-            <p className="text-xs text-muted-foreground">Enjoy the experience - dine, order and earn</p>
+            <h1 className="text-lg font-bold text-foreground">Good evening!</h1>
+            <p className="text-[11px] text-muted-foreground">Enjoy the experience - dine, order and earn</p>
           </div>
         </div>
-        <button className="rounded-full border border-border p-2">
+        <button className="relative rounded-full border border-border p-2.5 hover:bg-secondary transition-colors">
           <Bell className="h-5 w-5 text-foreground" />
+          <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background" />
         </button>
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto pb-24 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto pb-28 scrollbar-hide">
         {/* Search */}
-        <div className="flex items-center gap-2 px-5 py-3">
-          <div className="flex flex-1 items-center gap-2 rounded-2xl border border-border bg-secondary/50 px-4 py-3">
+        <div className="flex items-center gap-2.5 px-5 py-2.5">
+          <div className="flex flex-1 items-center gap-2.5 rounded-2xl bg-secondary px-4 py-3.5">
             <Search className="h-4 w-4 text-muted-foreground" />
             <input
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               placeholder="Enter postcode or town or city"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => navigate("/search")}
             />
           </div>
           <button
             onClick={() => setShowFilter(true)}
-            className="rounded-2xl bg-primary p-3"
+            className="rounded-2xl bg-primary p-3.5 shadow-lg shadow-primary/20 active:scale-95 transition-transform"
           >
             <SlidersHorizontal className="h-5 w-5 text-primary-foreground" />
           </button>
         </div>
 
         {/* Quick Actions */}
-        <div className="flex gap-3 px-5 py-2">
-          <button className="flex flex-1 items-center gap-3 rounded-2xl border border-border bg-background p-4 shadow-sm">
-            <div className="rounded-xl bg-primary/10 p-2.5">
-              <span className="text-lg">🪑</span>
+        <div className="flex gap-3 px-5 py-3">
+          <button className="flex flex-1 items-center gap-3 rounded-2xl bg-background p-4 card-shadow border border-border/50 active:scale-[0.98] transition-transform">
+            <div className="rounded-xl bg-primary/10 p-3">
+              <span className="text-xl">🪑</span>
             </div>
             <div className="text-left">
               <p className="text-sm font-semibold text-foreground">Order at table</p>
               <p className="text-[10px] text-muted-foreground">Scan QR to order</p>
             </div>
           </button>
-          <button className="flex flex-1 items-center gap-3 rounded-2xl border border-border bg-background p-4 shadow-sm">
-            <div className="rounded-xl bg-primary/10 p-2.5">
-              <span className="text-lg">💳</span>
+          <button className="flex flex-1 items-center gap-3 rounded-2xl bg-background p-4 card-shadow border border-border/50 active:scale-[0.98] transition-transform">
+            <div className="rounded-xl bg-primary/10 p-3">
+              <span className="text-xl">💳</span>
             </div>
             <div className="text-left">
               <p className="text-sm font-semibold text-foreground">Pay & Go</p>
@@ -87,71 +87,68 @@ const HomePage = () => {
         </div>
 
         {/* Loyalty Banner */}
-        <div className="mx-5 mt-3 rounded-2xl bg-foreground p-5">
-          <h3 className="text-base font-bold text-background">Join Our Loyalty Program</h3>
-          <p className="mt-1 text-xs text-background/70">
-            Turn every visit into reward - dine, earn, and enjoy exclusive member benefits
-          </p>
-          <button className="mt-3 rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground">
-            Join now
-          </button>
-        </div>
-
-        {/* AI Diet Coach Card */}
-        <div className="mx-5 mt-4 rounded-2xl bg-gradient-to-r from-foreground to-foreground/80 p-5 relative overflow-hidden">
-          <p className="text-sm font-medium text-background/90 italic max-w-[65%]">
-            "Today's tip: Add more fiber to your lunch."
-          </p>
-          <p className="mt-1 text-xs text-background/60">Your AI Diet Coach</p>
-          <button className="mt-2 rounded-lg bg-background/20 px-3 py-1.5 text-[10px] font-semibold text-background backdrop-blur-sm">
-            Get Tips
-          </button>
-          <img src={foodImage} alt="Food" className="absolute right-0 top-0 h-full w-28 object-cover opacity-40 rounded-r-2xl" />
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mx-5 mt-1 rounded-3xl bg-foreground p-5 relative overflow-hidden"
+        >
+          <div className="relative z-10">
+            <h3 className="text-base font-bold text-background">Join Our Loyalty Program</h3>
+            <p className="mt-1.5 text-xs text-background/60 leading-relaxed max-w-[75%]">
+              Turn every visit into reward - dine, earn, and enjoy exclusive member benefits
+            </p>
+            <button className="mt-3.5 rounded-full bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/30 active:scale-95 transition-transform">
+              Join now
+            </button>
+          </div>
+          <div className="absolute -right-4 -bottom-4 h-28 w-28 rounded-full bg-primary/15" />
+          <div className="absolute right-8 -top-6 h-20 w-20 rounded-full bg-primary/10" />
+        </motion.div>
 
         {/* Categories */}
-        <div className="flex gap-3 px-5 py-4">
+        <div className="flex gap-2.5 px-5 py-4">
           {categories.map((c) => (
             <button
               key={c.label}
               onClick={() => navigate("/search")}
-              className="flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2.5"
+              className="flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2.5 hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-95"
             >
-              <span>{c.emoji}</span>
-              <span className="text-sm font-medium text-foreground">{c.label}</span>
+              <span className="text-base">{c.emoji}</span>
+              <span className="text-xs font-medium text-foreground">{c.label}</span>
             </button>
           ))}
         </div>
 
         {/* Top Restaurants */}
         <div className="px-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground">Top restaurants in London</h2>
-            <button onClick={() => navigate("/search")} className="text-xs font-medium text-primary">See all</button>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-foreground">Top restaurants in London</h2>
+            <button onClick={() => navigate("/search")} className="text-xs font-semibold text-primary">See all</button>
           </div>
 
-          <div className="mt-3 space-y-4">
+          <div className="space-y-5">
             {mockRestaurants.slice(0, 3).map((r, i) => (
               <motion.button
                 key={r.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: 0.15 + i * 0.1 }}
                 onClick={() => navigate(`/restaurant/${r.id}`)}
-                className="w-full text-left"
+                className="w-full text-left group"
               >
                 <div className="overflow-hidden rounded-2xl">
-                  <div className="relative h-44">
-                    <img src={r.image} alt={r.name} className="h-full w-full object-cover" />
-                    <div className="absolute right-3 top-3 flex items-center gap-1 rounded-lg bg-background/90 backdrop-blur-sm px-2 py-1">
+                  <div className="relative h-44 overflow-hidden rounded-2xl">
+                    <img src={r.image} alt={r.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute right-3 top-3 flex items-center gap-1 rounded-lg bg-background/90 backdrop-blur-sm px-2.5 py-1">
                       <Star className="h-3 w-3 fill-warning text-warning" />
                       <span className="text-xs font-bold text-foreground">{r.rating}</span>
                     </div>
                   </div>
-                  <div className="flex items-start justify-between pt-2.5">
+                  <div className="flex items-start justify-between pt-3 pb-1">
                     <div>
-                      <p className="font-semibold text-foreground">{r.name}</p>
-                      <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+                      <p className="text-sm font-semibold text-foreground">{r.name}</p>
+                      <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Open Until {r.openUntil}
                         </span>
@@ -163,11 +160,11 @@ const HomePage = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleFav(r.id); }}
-                        className="p-1"
+                        className="p-1 hover:scale-110 transition-transform"
                       >
-                        <Heart className={`h-5 w-5 ${favorites.includes(r.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                        <Heart className={`h-5 w-5 transition-colors ${favorites.includes(r.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
                       </button>
-                      <span className="flex items-center gap-1 text-xs font-medium text-primary">
+                      <span className="flex items-center gap-0.5 text-[11px] font-medium text-primary border border-primary/20 rounded-full px-3 py-1">
                         Details <ChevronRight className="h-3 w-3" />
                       </span>
                     </div>
