@@ -57,7 +57,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
-                <div className="mx-auto h-dvh w-[430px] max-w-full overflow-hidden bg-background">
+                <div className="h-full w-full overflow-hidden bg-background">
                   <Routes>
                     <Route
                       path="/"

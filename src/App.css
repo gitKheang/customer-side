@@ -1,11 +1,10 @@
 #root {
-  width: 430px;
-  max-width: 100%;
-  height: 100dvh;
+  width: min(402px, 100vw);
+  height: min(874px, 100dvh);
   margin: 0 auto;
 }
 
-@media (min-width: 431px) {
+@media (min-width: 403px) {
   body {
     background: #f4e8ba;
     display: flex;
@@ -15,7 +14,6 @@
   }
 
   #root {
-    height: min(932px, 100dvh);
     border-radius: 40px;
     overflow: hidden;
     box-shadow:
