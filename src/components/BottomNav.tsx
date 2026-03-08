@@ -1,18 +1,17 @@
 import { NavLink as RouterNavLink } from "react-router-dom";
-import { Home, ClipboardList, Gift, CalendarDays, User } from "lucide-react";
+import { Home, Search, CalendarDays, User } from "lucide-react";
 
 const tabs = [
   { to: "/home", icon: Home, label: "Home" },
-  { to: "/orders", icon: ClipboardList, label: "Order" },
-  { to: "/rewards", icon: Gift, label: "Reward" },
-  { to: "/history", icon: CalendarDays, label: "History" },
+  { to: "/search", icon: Search, label: "Search" },
+  { to: "/history", icon: CalendarDays, label: "Bookings" },
   { to: "/profile", icon: User, label: "Profile" },
 ];
 
 const BottomNav = () => {
   return (
     <nav className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border z-40">
-      <div className="flex items-center justify-around pt-2 pb-7">
+      <div className="flex items-center justify-around pt-2 pb-7 safe-area-bottom">
         {tabs.map((tab) => (
           <RouterNavLink
             key={tab.to}
@@ -25,20 +24,16 @@ const BottomNav = () => {
           >
             {({ isActive }) => (
               <>
-                {tab.label === "Reward" ? (
-                  <div className={`-mt-5 rounded-full p-3 shadow-lg transition-all ${
-                    isActive 
-                      ? "bg-primary text-primary-foreground scale-110" 
-                      : "bg-secondary text-muted-foreground"
-                  }`}>
-                    <tab.icon className="h-5 w-5" />
-                  </div>
-                ) : (
-                  <tab.icon className={`h-5 w-5 transition-all ${
+                <tab.icon
+                  className={`h-5 w-5 transition-all ${
                     isActive ? "text-primary" : "text-muted-foreground"
-                  }`} />
-                )}
-                <span className={`transition-all ${isActive ? "font-semibold" : ""}`}>{tab.label}</span>
+                  }`}
+                />
+                <span
+                  className={`transition-all ${isActive ? "font-semibold" : ""}`}
+                >
+                  {tab.label}
+                </span>
               </>
             )}
           </RouterNavLink>

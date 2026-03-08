@@ -1,21 +1,65 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { X, Clock, Heart, TrendingUp } from "lucide-react";
 import { cuisineTypes } from "@/data/mockData";
 import { motion, AnimatePresence } from "framer-motion";
 
+export interface Filters {
+  distance: number;
+  rating: string;
+  cuisines: string[];
+  dietary: string[];
+  quickFilters: string[];
+}
+
+export const defaultFilters: Filters = {
+  distance: 25,
+  rating: "Any",
+  cuisines: [],
+  dietary: [],
+  quickFilters: [],
+};
+
 interface FilterSheetProps {
   open: boolean;
   onClose: () => void;
+  onApply?: (filters: Filters) => void;
+  filters?: Filters;
 }
 
-const FilterSheet = ({ open, onClose }: FilterSheetProps) => {
-  const [distance, setDistance] = useState([5]);
-  const [rating, setRating] = useState("Any");
-  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
-  const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
-  const [quickFilters, setQuickFilters] = useState<string[]>([]);
+const FilterSheet = ({
+  open,
+  onClose,
+  onApply,
+  filters: initialFilters,
+}: FilterSheetProps) => {
+  const [distance, setDistance] = useState([
+    initialFilters?.distance ?? defaultFilters.distance,
+  ]);
+  const [rating, setRating] = useState(
+    initialFilters?.rating ?? defaultFilters.rating,
+  );
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>(
+    initialFilters?.cuisines ?? [],
+  );
+  const [selectedDietary, setSelectedDietary] = useState<string[]>(
+    initialFilters?.dietary ?? [],
+  );
+  const [quickFilters, setQuickFilters] = useState<string[]>(
+    initialFilters?.quickFilters ?? [],
+  );
+
+  // Sync when external filters change
+  useEffect(() => {
+    if (initialFilters) {
+      setDistance([initialFilters.distance]);
+      setRating(initialFilters.rating);
+      setSelectedCuisines(initialFilters.cuisines);
+      setSelectedDietary(initialFilters.dietary);
+      setQuickFilters(initialFilters.quickFilters);
+    }
+  }, [initialFilters]);
 
   const ratings = ["Any", "4.5+", "4+", "3.5+", "3+"];
   const dietaryOpts = ["Vegetarian", "Vegan", "Gluten-Free"];
@@ -25,15 +69,30 @@ const FilterSheet = ({ open, onClose }: FilterSheetProps) => {
     { label: "Trending", icon: TrendingUp },
   ];
 
-  const toggleArray = (val: string, setter: React.Dispatch<React.SetStateAction<string[]>>) =>
+  const toggleArray = (
+    val: string,
+    setter: React.Dispatch<React.SetStateAction<string[]>>,
+  ) =>
     setter((p) => (p.includes(val) ? p.filter((v) => v !== val) : [...p, val]));
 
   const clearAll = () => {
-    setDistance([5]);
-    setRating("Any");
+    setDistance([defaultFilters.distance]);
+    setRating(defaultFilters.rating);
     setSelectedCuisines([]);
     setSelectedDietary([]);
     setQuickFilters([]);
+    onApply?.(defaultFilters);
+  };
+
+  const handleApply = () => {
+    onApply?.({
+      distance: distance[0],
+      rating,
+      cuisines: selectedCuisines,
+      dietary: selectedDietary,
+      quickFilters,
+    });
+    onClose();
   };
 
   return (
@@ -62,14 +121,19 @@ const FilterSheet = ({ open, onClose }: FilterSheetProps) => {
             <div className="px-6 pb-8">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-lg font-bold text-foreground">Filter</h2>
-                <button onClick={onClose} className="rounded-full border border-border p-2 hover:bg-secondary transition-colors active:scale-90">
+                <button
+                  onClick={onClose}
+                  className="rounded-full border border-border p-2 hover:bg-secondary transition-colors active:scale-90"
+                >
                   <X className="h-4 w-4 text-foreground" />
                 </button>
               </div>
 
               {/* Quick Filters */}
               <div className="mb-5">
-                <h3 className="text-xs font-semibold text-foreground mb-2.5 flex items-center gap-1.5">⚡ Quick Filters</h3>
+                <h3 className="text-xs font-semibold text-foreground mb-2.5 flex items-center gap-1.5">
+                  ⚡ Quick Filters
+                </h3>
                 <div className="flex gap-2 flex-wrap">
                   {quickOpts.map((q) => (
                     <button
@@ -91,10 +155,21 @@ const FilterSheet = ({ open, onClose }: FilterSheetProps) => {
               {/* Distance */}
               <div className="mb-5">
                 <div className="flex items-center justify-between mb-2.5">
-                  <h3 className="text-xs font-semibold text-foreground flex items-center gap-1.5">📍 Distance</h3>
-                  <span className="text-xs font-bold text-primary">{distance[0]} miles</span>
+                  <h3 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    📍 Distance
+                  </h3>
+                  <span className="text-xs font-bold text-primary">
+                    {distance[0]} miles
+                  </span>
                 </div>
-                <Slider value={distance} onValueChange={setDistance} min={1} max={25} step={1} className="w-full" />
+                <Slider
+                  value={distance}
+                  onValueChange={setDistance}
+                  min={1}
+                  max={25}
+                  step={1}
+                  className="w-full"
+                />
                 <div className="mt-1.5 flex justify-between text-[10px] text-muted-foreground">
                   <span>1mi</span>
                   <span>25mi</span>
@@ -103,7 +178,9 @@ const FilterSheet = ({ open, onClose }: FilterSheetProps) => {
 
               {/* Rating */}
               <div className="mb-5">
-                <h3 className="text-xs font-semibold text-foreground mb-2.5 flex items-center gap-1.5">⭐ Minimum Rating</h3>
+                <h3 className="text-xs font-semibold text-foreground mb-2.5 flex items-center gap-1.5">
+                  ⭐ Minimum Rating
+                </h3>
                 <div className="flex gap-2">
                   {ratings.map((r) => (
                     <button
@@ -123,9 +200,11 @@ const FilterSheet = ({ open, onClose }: FilterSheetProps) => {
 
               {/* Cuisine */}
               <div className="mb-5">
-                <h3 className="text-xs font-semibold text-foreground mb-2.5 flex items-center gap-1.5">🍳 Cuisine Type</h3>
+                <h3 className="text-xs font-semibold text-foreground mb-2.5 flex items-center gap-1.5">
+                  🍳 Cuisine Type
+                </h3>
                 <div className="flex gap-2 flex-wrap">
-                  {cuisineTypes.slice(0, 4).map((c) => (
+                  {cuisineTypes.map((c) => (
                     <button
                       key={c}
                       onClick={() => toggleArray(c, setSelectedCuisines)}
@@ -143,7 +222,9 @@ const FilterSheet = ({ open, onClose }: FilterSheetProps) => {
 
               {/* Dietary */}
               <div className="mb-6">
-                <h3 className="text-xs font-semibold text-foreground mb-2.5 flex items-center gap-1.5">🥬 Dietary Options</h3>
+                <h3 className="text-xs font-semibold text-foreground mb-2.5 flex items-center gap-1.5">
+                  🥬 Dietary Options
+                </h3>
                 <div className="flex gap-2 flex-wrap">
                   {dietaryOpts.map((d) => (
                     <button
@@ -163,10 +244,20 @@ const FilterSheet = ({ open, onClose }: FilterSheetProps) => {
 
               {/* Actions */}
               <div className="flex gap-3">
-                <Button variant="outline" size="lg" className="flex-1" onClick={clearAll}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="flex-1"
+                  onClick={clearAll}
+                >
                   Clear all
                 </Button>
-                <Button variant="cta" size="lg" className="flex-1" onClick={onClose}>
+                <Button
+                  variant="cta"
+                  size="lg"
+                  className="flex-1"
+                  onClick={handleApply}
+                >
                   Show Results
                 </Button>
               </div>

@@ -3,11 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
+import { goBackOr } from "@/lib/navigation";
+import { toast } from "sonner";
 
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
   const [otp, setOtp] = useState(["", "", "", ""]);
-  const refs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
+  const refs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
 
   const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -25,8 +32,11 @@ const VerifyEmailPage = () => {
 
   return (
     <div className="flex h-full flex-col bg-background safe-area-top">
-      <div className="px-6">
-        <button onClick={() => navigate(-1)} className="mb-6 mt-3 self-start p-1.5 rounded-full hover:bg-secondary transition-colors">
+      <div className="px-5">
+        <button
+          onClick={() => goBackOr(navigate, "/signup")}
+          className="mb-5 mt-3 self-start p-2 rounded-full hover:bg-secondary transition-colors active:scale-90"
+        >
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
       </div>
@@ -34,15 +44,15 @@ const VerifyEmailPage = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center px-6"
+        className="flex flex-col items-center px-5"
       >
         <div className="mb-5 rounded-2xl bg-primary/10 p-4">
           <ShieldCheck className="h-7 w-7 text-primary" />
         </div>
 
-        <h1 className="text-2xl font-bold text-foreground">Verify your email</h1>
+        <h1 className="text-2xl font-bold text-foreground">Verify account</h1>
         <p className="mt-2 text-center text-sm text-muted-foreground leading-relaxed">
-          We've sent a 4 digit code to{"\n"}your email address
+          We've sent a 4 digit code to{"\n"}your selected contact
         </p>
 
         <div className="mt-10 flex gap-4">
@@ -65,12 +75,22 @@ const VerifyEmailPage = () => {
           variant="cta"
           size="lg"
           className="mt-10 w-full"
-          onClick={() => navigate("/dietary-preferences")}
+          disabled={otp.some((d) => !d)}
+          onClick={() => navigate("/home")}
         >
           Confirm
         </Button>
 
-        <Button variant="outline" size="lg" className="mt-3 w-full">
+        <Button
+          variant="outline"
+          size="lg"
+          className="mt-3 w-full"
+          onClick={() => {
+            setOtp(["", "", "", ""]);
+            refs[0].current?.focus();
+            toast.success("A new code has been sent");
+          }}
+        >
           Resend code
         </Button>
       </motion.div>

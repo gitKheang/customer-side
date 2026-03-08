@@ -4,42 +4,60 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-restaurant.jpg";
 import { Utensils, CalendarDays, Clock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const slides = [
   {
     title: "Book Your Table\nInstantly",
-    subtitle: "Find restaurants, check real-time availability, and lock in your spot instantly.",
+    subtitle:
+      "Find restaurants, check real-time availability, and lock in your spot instantly.",
   },
   {
     title: "Discover Amazing\nRestaurants",
-    subtitle: "Browse curated restaurants near you with reviews, menus, and photos.",
+    subtitle:
+      "Browse curated restaurants near you with reviews, menus, and photos.",
   },
   {
     title: "Never Wait\nIn Line Again",
-    subtitle: "Reserve your table in seconds and arrive to a seat ready for you.",
+    subtitle:
+      "Reserve your table in seconds and arrive to a seat ready for you.",
   },
 ];
 
 const WelcomePage = () => {
   const navigate = useNavigate();
+  const { guestLogin } = useAuth();
   const [current, setCurrent] = useState(0);
 
   return (
     <div className="flex h-full flex-col bg-background">
       <div className="relative h-[55%] overflow-hidden">
-        <img src={heroImage} alt="Restaurant" className="h-full w-full object-cover" />
+        <img
+          src={heroImage}
+          alt="Restaurant"
+          className="h-full w-full object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
         <div className="absolute bottom-14 left-0 right-0 flex justify-center gap-4">
           {[
             { Icon: Utensils, bg: "bg-primary", shadow: "shadow-primary/30" },
-            { Icon: CalendarDays, bg: "bg-destructive", shadow: "shadow-destructive/30" },
+            {
+              Icon: CalendarDays,
+              bg: "bg-destructive",
+              shadow: "shadow-destructive/30",
+            },
             { Icon: Clock, bg: "bg-warning", shadow: "shadow-warning/30" },
           ].map(({ Icon, bg, shadow }, i) => (
             <motion.div
               key={i}
               initial={{ scale: 0, y: 30 }}
               animate={{ scale: 1, y: 0 }}
-              transition={{ delay: 0.3 + i * 0.12, type: "spring", stiffness: 260, damping: 20 }}
+              transition={{
+                delay: 0.3 + i * 0.12,
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+              }}
               className={`rounded-2xl p-3.5 shadow-lg ${bg} ${shadow} text-background`}
             >
               <Icon className="h-6 w-6" />
@@ -48,7 +66,7 @@ const WelcomePage = () => {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-between px-8 pb-10 pt-5">
+      <div className="flex flex-1 flex-col items-center justify-between px-5 pb-10 pt-5">
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
@@ -80,12 +98,31 @@ const WelcomePage = () => {
         </div>
 
         <div className="flex w-full flex-col gap-3">
-          <Button variant="cta" size="lg" className="w-full" onClick={() => navigate("/signup")}>
+          <Button
+            variant="cta"
+            size="lg"
+            className="w-full"
+            onClick={() => navigate("/signup")}
+          >
             Sign up
           </Button>
-          <Button variant="outline" size="lg" className="w-full" onClick={() => navigate("/home")}>
-            Skip now
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full"
+            onClick={() => navigate("/signin")}
+          >
+            Log in
           </Button>
+          <button
+            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            onClick={() => {
+              guestLogin();
+              navigate("/home");
+            }}
+          >
+            Continue as Guest
+          </button>
         </div>
       </div>
     </div>
