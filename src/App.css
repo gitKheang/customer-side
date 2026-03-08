@@ -1,23 +1,22 @@
+html,
 body {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  margin: 0;
   background: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100dvh;
 }
 
 #root {
-  width: min(402px, 100vw);
-  height: min(874px, 100dvh);
+  width: 402px;
+  height: 874px;
   margin: 0 auto;
   overflow: hidden;
-}
-
-@media (min-width: 403px) {
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100dvh;
-  }
-
-  #root {
-    position: relative;
-  }
+  position: relative;
 }
