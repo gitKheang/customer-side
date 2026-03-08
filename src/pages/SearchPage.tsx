@@ -118,7 +118,7 @@ const SearchPage = () => {
   });
 
   return (
-    <div className="relative flex h-full flex-col bg-background">
+    <div className="relative flex h-full min-w-0 flex-col overflow-x-hidden bg-background">
       <div className="safe-area-top" />
 
       {/* Header */}
@@ -135,11 +135,11 @@ const SearchPage = () => {
       </div>
 
       {/* Search bar */}
-      <div className="flex items-center gap-2.5 px-5 py-2">
-        <div className="flex flex-1 items-center gap-2.5 rounded-2xl bg-secondary px-4 py-3.5">
+      <div className="flex min-w-0 items-center gap-2.5 px-5 py-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl bg-secondary px-4 py-3.5">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             placeholder="Search restaurants..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -155,12 +155,12 @@ const SearchPage = () => {
       </div>
 
       {/* Categories */}
-      <div className="flex gap-2 px-5 py-2.5">
+      <div className="flex gap-2 overflow-x-auto px-5 py-2.5 scrollbar-hide">
         {categories.map((c) => (
           <button
             key={c.label}
             onClick={() => setActiveCategory(c.label)}
-            className={`flex items-center gap-1.5 rounded-full border px-4 py-2.5 text-xs font-medium transition-all active:scale-95 ${
+            className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-2.5 text-xs font-medium transition-all active:scale-95 ${
               activeCategory === c.label
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border text-foreground hover:border-primary/30"
@@ -205,8 +205,8 @@ const SearchPage = () => {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-start justify-between pt-3">
-                  <div>
+                <div className="flex items-start justify-between gap-3 pt-3">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground">
                       {r.name}
                     </p>
@@ -235,7 +235,7 @@ const SearchPage = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
