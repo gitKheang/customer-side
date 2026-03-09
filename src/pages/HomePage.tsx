@@ -1,8 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Search,
-  SlidersHorizontal,
   Bell,
   Clock,
   MapPin,
@@ -12,21 +10,43 @@ import {
 } from "lucide-react";
 import { mockRestaurants } from "@/data/mockData";
 import BottomNav from "@/components/BottomNav";
-import FilterSheet from "@/components/FilterSheet";
+import RestaurantSearchBar from "@/components/RestaurantSearchBar";
+import RestaurantStoryViewer from "@/components/RestaurantStoryViewer";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useBookings } from "@/contexts/BookingsContext";
 import { useReviews } from "@/contexts/ReviewsContext";
+import { useRestaurantStoryState } from "@/hooks/useRestaurantStoryState";
+import {
+  formatStoryAge,
+  getRestaurantStoryGroups,
+} from "@/lib/restaurantStories";
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, isGuest } = useAuth();
   const { toggleFavorite, isFavorite } = useFavorites();
   const { unreadCount } = useBookings();
   const { getRestaurantStats } = useReviews();
-  const [showFilter, setShowFilter] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const { isRestaurantStorySeen, markRestaurantStorySeen } =
+    useRestaurantStoryState();
+  const isFigmaCapture =
+    searchParams.get("capture") === "1" || searchParams.get("figma") === "1";
+  const captureSearchQuery =
+    searchParams.get("search") ??
+    searchParams.get("q") ??
+    (isFigmaCapture ? "p" : "");
+  const [searchQuery, setSearchQuery] = useState(captureSearchQuery);
+  const [activeStoryRestaurantId, setActiveStoryRestaurantId] = useState<
+    string | undefined
+  >();
+  const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
+  const storyGroups = useMemo(
+    () => getRestaurantStoryGroups(mockRestaurants),
+    [],
+  );
 
   const hour = new Date().getHours();
   const greeting =
@@ -85,24 +105,92 @@ const HomePage = () => {
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-28 scrollbar-hide">
         {/* Search */}
-        <div className="flex items-center gap-2.5 px-5 py-2.5">
-          <div className="flex flex-1 items-center gap-2.5 rounded-2xl bg-secondary px-4 py-3.5">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              placeholder="Enter postcode or town or city"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => navigate("/search")}
-            />
-          </div>
-          <button
-            onClick={() => setShowFilter(true)}
-            className="rounded-2xl bg-primary p-3.5 shadow-lg shadow-primary/20 active:scale-95 transition-transform"
-          >
-            <SlidersHorizontal className="h-5 w-5 text-primary-foreground" />
-          </button>
+        <div
+          className={`sticky top-0 z-20 px-5 py-2.5 ${
+            isFigmaCapture
+              ? "bg-background"
+              : "bg-background/95 backdrop-blur"
+          }`}
+        >
+          <RestaurantSearchBar
+            className="z-20"
+            disableSuggestionAnimation={isFigmaCapture}
+            forceSuggestionsOpen={isFigmaCapture}
+            placeholder="Enter postcode or town or city"
+            query={searchQuery}
+            onQueryChange={setSearchQuery}
+            onSubmit={(value) =>
+              navigate(value ? `/search?q=${encodeURIComponent(value)}` : "/search")
+            }
+            onSelectRestaurant={(restaurant) =>
+              navigate(`/restaurant/${restaurant.id}`)
+            }
+          />
         </div>
+
+        {storyGroups.length > 0 && (
+          <div className="px-5 pb-3 pt-1">
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-foreground">
+                  Latest stories
+                </h2>
+                <p className="text-[11px] text-muted-foreground">
+                  Quick updates from restaurants near you
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+              {storyGroups.map((group, index) => {
+                const isSeen = isRestaurantStorySeen(group.restaurant);
+
+                return (
+                  <motion.button
+                    key={group.restaurant.id}
+                    initial={isFigmaCapture ? false : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={
+                      isFigmaCapture ? { duration: 0 } : { delay: 0.05 + index * 0.05 }
+                    }
+                    onClick={() => {
+                      setActiveStoryRestaurantId(group.restaurant.id);
+                      setIsStoryViewerOpen(true);
+                    }}
+                    className="w-[76px] shrink-0 text-left"
+                  >
+                    <div
+                      className={`inline-flex rounded-[1.2rem] border-[3px] p-[3px] transition-all ${
+                        isSeen
+                          ? "border-border bg-transparent"
+                          : "border-primary bg-primary shadow-lg shadow-primary/30"
+                      }`}
+                    >
+                      <div className="relative h-16 w-16 overflow-hidden rounded-[0.95rem]">
+                        <img
+                          src={group.latestStory.image}
+                          alt={group.restaurant.name}
+                          className="h-full w-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+                        <span className="absolute left-1.5 top-1.5 rounded-full bg-background/90 px-1.5 py-0.5 text-[9px] font-semibold text-foreground">
+                          {group.stories.length}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="mt-2 truncate text-[11px] font-semibold text-foreground">
+                      {group.restaurant.name}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {formatStoryAge(group.latestStory.postedAt)} ago
+                    </p>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Categories */}
         <div className="flex gap-2.5 px-5 py-4">
@@ -140,9 +228,11 @@ const HomePage = () => {
               return (
                 <motion.button
                   key={r.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={isFigmaCapture ? false : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 + i * 0.1 }}
+                  transition={
+                    isFigmaCapture ? { duration: 0 } : { delay: 0.15 + i * 0.1 }
+                  }
                   onClick={() => navigate(`/restaurant/${r.id}`)}
                   className="w-full text-left group"
                 >
@@ -202,7 +292,15 @@ const HomePage = () => {
       </div>
 
       <BottomNav />
-      <FilterSheet open={showFilter} onClose={() => setShowFilter(false)} />
+      <RestaurantStoryViewer
+        groups={storyGroups}
+        initialRestaurantId={activeStoryRestaurantId}
+        open={isStoryViewerOpen}
+        onClose={() => setIsStoryViewerOpen(false)}
+        onRestaurantSeen={markRestaurantStorySeen}
+        primaryActionLabel="Book Table"
+        onPrimaryAction={(restaurant) => navigate(`/book/${restaurant.id}`)}
+      />
     </div>
   );
 };

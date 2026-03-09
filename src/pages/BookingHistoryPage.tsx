@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { Clock, Users, CalendarDays, X } from "lucide-react";
+import { Clock, Users, CalendarDays, Navigation, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useBookings } from "@/contexts/BookingsContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { mockRestaurants } from "@/data/mockData";
 
 const convertTo24h = (time12h: string) => {
   const match = time12h.match(/^(\d{1,2}):(\d{2})(am|pm)$/i);
@@ -27,15 +28,14 @@ type HistoryTab = "upcoming" | "past" | "cancelled";
 
 const BookingHistoryPage = () => {
   const navigate = useNavigate();
-  const { bookings, cancelBooking, modifyBooking } = useBookings();
+  const { bookings, cancelBooking } = useBookings();
   const { isAuthenticated, isGuest } = useAuth();
   const [tab, setTab] = useState<HistoryTab>("upcoming");
 
   const getDisplayStatus = (
     booking: (typeof bookings)[number],
-  ): "upcoming" | "past" | "cancelled" | "modified" => {
+  ): "upcoming" | "past" | "cancelled" => {
     if (booking.status === "cancelled") return "cancelled";
-    if (booking.status === "modified") return "modified";
     if (booking.status === "completed") return "past";
 
     const bookingDateTime = getBookingDateTime(booking.date, booking.time);
@@ -49,9 +49,6 @@ const BookingHistoryPage = () => {
 
   const filtered = bookings.filter((booking) => {
     const status = getDisplayStatus(booking);
-    if (tab === "cancelled") {
-      return status === "cancelled" || status === "modified";
-    }
     return status === tab;
   });
 
@@ -70,18 +67,30 @@ const BookingHistoryPage = () => {
   };
 
   const handleModify = (id: string, restaurantId: string) => {
-    const shouldModify = window.confirm(
-      "Modify this reservation? The current reservation will be marked as modified and you can book a new time.",
-    );
-    if (!shouldModify) return;
+    navigate(`/book/${restaurantId}`, {
+      state: {
+        mode: "modify",
+        bookingId: id,
+        fromHistory: true,
+      },
+    });
+  };
 
-    const result = modifyBooking(id);
-    if (!result.success) {
-      toast.error(result.message);
+  const handleOpenDirections = (restaurantId: string) => {
+    const restaurant = mockRestaurants.find((item) => item.id === restaurantId);
+
+    if (!restaurant) {
+      toast.error("Restaurant details not found");
+      navigate(`/restaurant/${restaurantId}`);
       return;
     }
-    toast.info(result.message);
-    navigate(`/book/${restaurantId}`);
+
+    const destination = encodeURIComponent(restaurant.address);
+    window.open(
+      `https://www.google.com/maps/dir/?api=1&origin=Current+Location&destination=${destination}&travelmode=driving`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
 
   // Guest mode restriction
@@ -124,7 +133,6 @@ const BookingHistoryPage = () => {
     upcoming: "bg-primary/10 text-primary",
     past: "bg-success/10 text-success",
     cancelled: "bg-destructive/10 text-destructive",
-    modified: "bg-warning/20 text-foreground",
   };
 
   return (
@@ -149,7 +157,7 @@ const BookingHistoryPage = () => {
                 : "text-muted-foreground"
             }`}
           >
-            {t === "cancelled" ? "Cancelled / Modified" : t}
+            {t}
           </button>
         ))}
       </div>
@@ -174,49 +182,111 @@ const BookingHistoryPage = () => {
               return (
                 <motion.div
                   key={b.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="rounded-2xl border border-border overflow-hidden card-shadow"
-              >
-                <div className="flex gap-3 p-3.5">
-                  <img
-                    src={b.restaurantImage}
-                    alt={b.restaurantName}
-                    className="h-22 w-22 rounded-xl object-cover"
-                    style={{ width: 88, height: 88 }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-foreground text-sm truncate">
-                          {b.restaurantName}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          Ref: {b.bookingReference}
-                        </p>
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  className="rounded-2xl border border-border overflow-hidden card-shadow"
+                >
+                  {displayStatus === "upcoming" ? (
+                    <div
+                      className="w-full text-left"
+                    >
+                      <div className="flex gap-3 p-3.5">
+                        <img
+                          src={b.restaurantImage}
+                          alt={b.restaurantName}
+                          className="h-22 w-22 rounded-xl object-cover"
+                          style={{ width: 88, height: 88 }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-semibold text-foreground text-sm truncate">
+                                {b.restaurantName}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                Ref: {b.bookingReference}
+                              </p>
+                            </div>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize whitespace-nowrap ${statusColor[displayStatus]}`}
+                            >
+                              {displayStatus}
+                            </span>
+                          </div>
+                          <div className="mt-1.5 space-y-1 text-[11px] text-muted-foreground">
+                            <p className="flex items-center gap-1.5">
+                              <CalendarDays className="h-3 w-3 text-primary/60" />{" "}
+                              {b.date}
+                            </p>
+                            <p className="flex items-center gap-1.5">
+                              <Clock className="h-3 w-3 text-primary/60" /> {b.time}
+                            </p>
+                            <p className="flex items-center gap-1.5">
+                              <Users className="h-3 w-3 text-primary/60" />{" "}
+                              {b.guests} Guests
+                              {b.tableNumber ? ` • Table ${b.tableNumber}` : ""}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize whitespace-nowrap ${statusColor[displayStatus]}`}
-                      >
-                        {displayStatus}
-                      </span>
+                      <div className="px-3.5 pb-3">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto rounded-full px-0 py-0 text-[11px] font-semibold text-primary hover:bg-transparent hover:text-primary"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleOpenDirections(b.restaurantId);
+                          }}
+                        >
+                          <Navigation className="mr-1.5 h-3.5 w-3.5" />
+                          Directions
+                        </Button>
+                      </div>
                     </div>
-                    <div className="mt-1.5 space-y-1 text-[11px] text-muted-foreground">
-                      <p className="flex items-center gap-1.5">
-                        <CalendarDays className="h-3 w-3 text-primary/60" />{" "}
-                        {b.date}
-                      </p>
-                      <p className="flex items-center gap-1.5">
-                        <Clock className="h-3 w-3 text-primary/60" /> {b.time}
-                      </p>
-                      <p className="flex items-center gap-1.5">
-                        <Users className="h-3 w-3 text-primary/60" /> {b.guests}{" "}
-                        Guests{b.tableNumber ? ` • Table ${b.tableNumber}` : ""}
-                      </p>
+                  ) : (
+                    <div className="flex gap-3 p-3.5">
+                      <img
+                        src={b.restaurantImage}
+                        alt={b.restaurantName}
+                        className="h-22 w-22 rounded-xl object-cover"
+                        style={{ width: 88, height: 88 }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-foreground text-sm truncate">
+                              {b.restaurantName}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              Ref: {b.bookingReference}
+                            </p>
+                          </div>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize whitespace-nowrap ${statusColor[displayStatus]}`}
+                          >
+                            {displayStatus}
+                          </span>
+                        </div>
+                        <div className="mt-1.5 space-y-1 text-[11px] text-muted-foreground">
+                          <p className="flex items-center gap-1.5">
+                            <CalendarDays className="h-3 w-3 text-primary/60" />{" "}
+                            {b.date}
+                          </p>
+                          <p className="flex items-center gap-1.5">
+                            <Clock className="h-3 w-3 text-primary/60" /> {b.time}
+                          </p>
+                          <p className="flex items-center gap-1.5">
+                            <Users className="h-3 w-3 text-primary/60" />{" "}
+                            {b.guests} Guests
+                            {b.tableNumber ? ` • Table ${b.tableNumber}` : ""}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  )}
                 {displayStatus === "upcoming" && (
                   <div className="flex gap-2 border-t border-border px-3.5 py-3">
                     <Button
@@ -237,15 +307,16 @@ const BookingHistoryPage = () => {
                     </Button>
                   </div>
                 )}
-                {displayStatus === "past" && (
+                {(displayStatus === "past" ||
+                  displayStatus === "cancelled") && (
                   <div className="border-t border-border px-3.5 py-3">
                     <Button
                       variant="outline"
                       size="sm"
                       className="w-full text-xs rounded-xl"
-                      onClick={() => navigate(`/restaurant/${b.restaurantId}`)}
+                      onClick={() => navigate(`/book/${b.restaurantId}`)}
                     >
-                      Leave Review
+                      Book Table
                     </Button>
                   </div>
                 )}

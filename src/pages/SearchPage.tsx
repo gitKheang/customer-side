@@ -1,27 +1,21 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
-  Search,
-  SlidersHorizontal,
   Star,
   Clock,
   MapPin,
   Heart,
   ChevronRight,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { mockRestaurants } from "@/data/mockData";
 import BottomNav from "@/components/BottomNav";
-import FilterSheet, { Filters, defaultFilters } from "@/components/FilterSheet";
-import { motion } from "framer-motion";
+import RestaurantSearchBar from "@/components/RestaurantSearchBar";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useReviews } from "@/contexts/ReviewsContext";
 import { goBackOr } from "@/lib/navigation";
-
-const parseDistanceMiles = (distance: string) => {
-  const value = parseFloat(distance);
-  return Number.isNaN(value) ? Number.MAX_SAFE_INTEGER : value;
-};
+import { getMatchingRestaurants } from "@/lib/restaurantSearch";
 
 const toShortDescription = (description: string) => {
   if (description.length <= 90) return description;
@@ -30,102 +24,39 @@ const toShortDescription = (description: string) => {
 
 const SearchPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toggleFavorite, isFavorite } = useFavorites();
   const { getRestaurantStats } = useReviews();
-  const [query, setQuery] = useState("");
-  const [showFilter, setShowFilter] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const urlQuery = searchParams.get("q") ?? "";
+  const [query, setQuery] = useState(urlQuery);
 
-  const categories = [
-    { emoji: "🔍", label: "All" },
-    { emoji: "🍽️", label: "Restaurants" },
-    { emoji: "🍺", label: "Pubs" },
-    { emoji: "☕", label: "Café" },
-    { emoji: "🎉", label: "Night clubs" },
-  ];
+  useEffect(() => {
+    setQuery(urlQuery);
+  }, [urlQuery]);
 
-  // Category to type mapping
-  const categoryTypeMap: Record<string, string[]> = {
-    All: [],
-    Restaurants: ["restaurant"],
-    Pubs: ["pub"],
-    Café: ["cafe"],
-    "Night clubs": ["pub", "nightclub"],
+  const results = useMemo(
+    () => getMatchingRestaurants(mockRestaurants, query),
+    [query],
+  );
+  const trimmedQuery = query.trim();
+
+  const handleSearchSubmit = (value: string) => {
+    if (!value) {
+      setSearchParams({});
+      return;
+    }
+
+    setSearchParams({ q: value });
   };
-
-  const normalizedQuery = query.trim().toLowerCase();
-
-  const filtered = mockRestaurants.filter((r) => {
-    const stats = getRestaurantStats(r);
-
-    // Text search
-    const matchesQuery =
-      !normalizedQuery ||
-      r.name.toLowerCase().includes(normalizedQuery) ||
-      r.cuisine.toLowerCase().includes(normalizedQuery) ||
-      r.address.toLowerCase().includes(normalizedQuery) ||
-      r.description.toLowerCase().includes(normalizedQuery) ||
-      r.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery));
-
-    // Category filter
-    const matchesCategory =
-      activeCategory === "All" ||
-      (categoryTypeMap[activeCategory] || []).includes(r.type);
-
-    // Distance filter (parse number from "0.3 miles" etc.)
-    const distNum = parseFloat(r.distance);
-    const matchesDistance = isNaN(distNum) || distNum <= filters.distance;
-
-    // Rating filter
-    let matchesRating = true;
-    if (filters.rating !== "Any") {
-      const minRating = parseFloat(filters.rating);
-      matchesRating = stats.averageRating >= minRating;
-    }
-
-    // Cuisine filter
-    const matchesCuisine =
-      filters.cuisines.length === 0 ||
-      filters.cuisines.some((c) =>
-        r.tags.some((t) => t.toLowerCase() === c.toLowerCase()),
-      );
-
-    // Open Now quick filter
-    const matchesOpenNow =
-      !filters.quickFilters.includes("Open Now") || r.isOpen;
-
-    // Favorites quick filter
-    const matchesFavorites =
-      !filters.quickFilters.includes("Favorites") || isFavorite(r.id);
-
-    return (
-      matchesQuery &&
-      matchesCategory &&
-      matchesDistance &&
-      matchesRating &&
-      matchesCuisine &&
-      matchesOpenNow &&
-      matchesFavorites
-    );
-  });
-
-  const sortedResults = [...filtered].sort((a, b) => {
-    if (!normalizedQuery) {
-      return parseDistanceMiles(a.distance) - parseDistanceMiles(b.distance);
-    }
-    return 0;
-  });
 
   return (
     <div className="relative flex h-full min-w-0 flex-col overflow-x-hidden bg-background">
       <div className="safe-area-top" />
 
-      {/* Header */}
       <div className="flex items-center gap-3 px-5 pb-3">
         <button
           onClick={() => goBackOr(navigate, "/home")}
-          className="rounded-full p-2 hover:bg-secondary transition-colors active:scale-90"
+          className="rounded-full p-2 transition-colors hover:bg-secondary active:scale-90"
         >
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
@@ -134,137 +65,117 @@ const SearchPage = () => {
         </h1>
       </div>
 
-      {/* Search bar */}
-      <div className="flex min-w-0 items-center gap-2.5 px-5 py-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl bg-secondary px-4 py-3.5">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <input
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            placeholder="Search restaurants..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-          />
-        </div>
-        <button
-          onClick={() => setShowFilter(true)}
-          className="rounded-2xl bg-primary p-3.5 shadow-lg shadow-primary/20 active:scale-95 transition-transform"
-        >
-          <SlidersHorizontal className="h-5 w-5 text-primary-foreground" />
-        </button>
+      <div className="px-5 py-2">
+        <RestaurantSearchBar
+          autoFocus
+          placeholder="Search restaurants..."
+          query={query}
+          onQueryChange={setQuery}
+          onSubmit={handleSearchSubmit}
+          onSelectRestaurant={(restaurant) =>
+            navigate(`/restaurant/${restaurant.id}`)
+          }
+        />
       </div>
 
-      {/* Categories */}
-      <div className="flex gap-2 overflow-x-auto px-5 py-2.5 scrollbar-hide">
-        {categories.map((c) => (
-          <button
-            key={c.label}
-            onClick={() => setActiveCategory(c.label)}
-            className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-2.5 text-xs font-medium transition-all active:scale-95 ${
-              activeCategory === c.label
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border text-foreground hover:border-primary/30"
-            }`}
-          >
-            <span>{c.emoji}</span>
-            {c.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Results */}
-      <div className="flex-1 overflow-y-auto px-5 pb-28 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-5 pb-28 pt-2 scrollbar-hide">
         <p className="py-2 text-xs text-muted-foreground">
-          {normalizedQuery
-            ? `We found (${sortedResults.length}) restaurant${sortedResults.length === 1 ? "" : "s"}`
-            : `Nearby restaurants around you (${sortedResults.length})`}
+          {trimmedQuery
+            ? `Showing ${results.length} restaurant${results.length === 1 ? "" : "s"} near "${trimmedQuery}"`
+            : `Nearest restaurants around you (${results.length})`}
         </p>
 
-        <div className="space-y-5">
-          {sortedResults.map((r, i) => {
-            const stats = getRestaurantStats(r);
-            return (
-              <motion.button
-                key={r.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
-                onClick={() => navigate(`/restaurant/${r.id}`)}
-                className="w-full text-left group"
-              >
-                <div className="relative h-44 overflow-hidden rounded-2xl">
-                  <img
-                    src={r.image}
-                    alt={r.name}
-                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute right-3 top-3 flex items-center gap-1 rounded-lg bg-background/90 backdrop-blur-sm px-2.5 py-1">
-                    <Star className="h-3 w-3 fill-warning text-warning" />
-                    <span className="text-xs font-bold">
-                      {stats.averageRating.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-start justify-between gap-3 pt-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground">
-                      {r.name}
-                    </p>
-                    <p className="mt-1 text-[11px] text-muted-foreground truncate">
-                      {r.address}
-                    </p>
-                    <p
-                      className="mt-1 text-[11px] text-muted-foreground leading-relaxed"
-                      style={{
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {toShortDescription(r.description)}
-                    </p>
-                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 shrink-0 overflow-visible" />{" "}
-                        Open Until {r.openUntil}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5 shrink-0 overflow-visible" />{" "}
-                        {r.distance}
+        {results.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-border px-5 py-8 text-center">
+            <p className="text-sm font-semibold text-foreground">
+              No restaurants matched your search.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Try another restaurant name, cuisine, or area.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {results.map((restaurant, index) => {
+              const stats = getRestaurantStats(restaurant);
+
+              return (
+                <motion.button
+                  key={restaurant.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.06 }}
+                  onClick={() => navigate(`/restaurant/${restaurant.id}`)}
+                  className="group w-full text-left"
+                >
+                  <div className="relative h-44 overflow-hidden rounded-2xl">
+                    <img
+                      src={restaurant.image}
+                      alt={restaurant.name}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute right-3 top-3 flex items-center gap-1 rounded-lg bg-background/90 px-2.5 py-1 backdrop-blur-sm">
+                      <Star className="h-3 w-3 fill-warning text-warning" />
+                      <span className="text-xs font-bold">
+                        {stats.averageRating.toFixed(1)}
                       </span>
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(r.id);
-                      }}
-                      className="hover:scale-110 transition-transform"
-                    >
-                      <Heart
-                        className={`h-5 w-5 transition-colors ${isFavorite(r.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`}
-                      />
-                    </button>
-                    <span className="flex items-center gap-0.5 text-[11px] font-medium text-primary border border-primary/20 rounded-full px-3 py-1">
-                      Details <ChevronRight className="h-3 w-3" />
-                    </span>
+                  <div className="flex items-start justify-between gap-3 pt-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        {restaurant.name}
+                      </p>
+                      <p className="mt-1 truncate text-[11px] text-muted-foreground">
+                        {restaurant.address}
+                      </p>
+                      <p
+                        className="mt-1 text-[11px] leading-relaxed text-muted-foreground"
+                        style={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {toShortDescription(restaurant.description)}
+                      </p>
+                      <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 shrink-0 overflow-visible" />{" "}
+                          Open Until {restaurant.openUntil}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5 shrink-0 overflow-visible" />{" "}
+                          {restaurant.distance}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleFavorite(restaurant.id);
+                        }}
+                        className="transition-transform hover:scale-110"
+                      >
+                        <Heart
+                          className={`h-5 w-5 transition-colors ${isFavorite(restaurant.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`}
+                        />
+                      </button>
+                      <span className="flex items-center gap-0.5 rounded-full border border-primary/20 px-3 py-1 text-[11px] font-medium text-primary">
+                        Details <ChevronRight className="h-3 w-3" />
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <BottomNav />
-      <FilterSheet
-        open={showFilter}
-        onClose={() => setShowFilter(false)}
-        filters={filters}
-        onApply={setFilters}
-      />
     </div>
   );
 };

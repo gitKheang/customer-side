@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { mockRestaurants } from "@/data/mockData";
 import {
   ArrowLeft,
@@ -19,37 +19,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBookings } from "@/contexts/BookingsContext";
 import { goBackOr } from "@/lib/navigation";
 import { EMAIL_REGEX } from "@/lib/authValidation";
-
-const tableInventory = Array.from({ length: 20 }, (_, idx) => {
-  const number = idx + 1;
-  let seats = 2;
-  if (number > 6 && number <= 12) seats = 4;
-  if (number > 12 && number <= 16) seats = 6;
-  if (number > 16) seats = 8;
-  return { number, seats };
-});
-
-const formatDateISO = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const convertTo24h = (time12h: string) => {
-  const match = time12h.match(/^(\d{1,2}):(\d{2})(am|pm)$/i);
-  if (!match) return "00:00";
-  let hours = parseInt(match[1], 10);
-  const minutes = match[2];
-  const period = match[3].toLowerCase();
-  if (period === "pm" && hours !== 12) hours += 12;
-  if (period === "am" && hours === 12) hours = 0;
-  return `${hours.toString().padStart(2, "0")}:${minutes}`;
-};
-
-const getBookingDateTime = (date: string, time: string) => {
-  return new Date(`${date}T${convertTo24h(time)}:00`);
-};
+import {
+  formatDateISO,
+  getBookableSlots,
+  getSuggestedTable,
+} from "@/lib/bookingAvailability";
 
 const generateBookingReference = () => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -60,20 +34,46 @@ const generateBookingReference = () => {
   return `RRA-${suffix}`;
 };
 
+interface BookTableLocationState {
+  mode?: "modify";
+  bookingId?: string;
+  fromHistory?: boolean;
+}
+
 const BookTablePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, isGuest } = useAuth();
-  const { bookings, addBooking } = useBookings();
+  const { bookings, addBooking, updateBooking } = useBookings();
   const restaurant = mockRestaurants.find((r) => r.id === id);
+  const pageState = (location.state as BookTableLocationState | null) ?? null;
+  const bookingToModify =
+    pageState?.mode === "modify" && pageState.bookingId
+      ? bookings.find(
+          (booking) =>
+            booking.id === pageState.bookingId &&
+            booking.restaurantId === id &&
+            booking.status === "upcoming",
+        )
+      : undefined;
+  const isModifyMode = !!bookingToModify;
 
-  const [guests, setGuests] = useState(1);
-  const [selectedDate, setSelectedDate] = useState(formatDateISO(new Date()));
-  const [selectedTime, setSelectedTime] = useState("");
+  const [guests, setGuests] = useState(bookingToModify?.guests ?? 1);
+  const [selectedDate, setSelectedDate] = useState(
+    bookingToModify?.date ?? formatDateISO(new Date()),
+  );
+  const [selectedTime, setSelectedTime] = useState(bookingToModify?.time ?? "");
   const [showCalendar, setShowCalendar] = useState(false);
-  const [specialRequests, setSpecialRequests] = useState("");
-  const [bookingName, setBookingName] = useState(user?.name || "");
-  const [bookingEmail, setBookingEmail] = useState(user?.email || "");
+  const [specialRequests, setSpecialRequests] = useState(
+    bookingToModify?.specialRequests ?? "",
+  );
+  const [bookingName, setBookingName] = useState(
+    bookingToModify?.bookingName || user?.name || "",
+  );
+  const [bookingEmail, setBookingEmail] = useState(
+    bookingToModify?.bookingEmail || user?.email || "",
+  );
 
   if (!restaurant) return null;
 
@@ -130,38 +130,29 @@ const BookTablePage = () => {
     };
   });
 
-  const bookingHoldsTable = (booking: (typeof bookings)[number]) => {
-    if (booking.status !== "upcoming") return false;
-    const reservationTime = getBookingDateTime(booking.date, booking.time);
-    const releaseTime = new Date(reservationTime.getTime() + 30 * 60 * 1000);
-    return releaseTime > new Date();
-  };
+  const getSlotTable = (slot: string) =>
+    getSuggestedTable({
+      bookings,
+      restaurantId: restaurant.id,
+      date: selectedDate,
+      slot,
+      guests,
+      currentBookingId: bookingToModify?.id,
+      currentTableNumber: bookingToModify?.tableNumber,
+    });
 
-  const getSuggestedTable = (slot: string) => {
-    if (!slot) return null;
-
-    const occupiedTables = new Set(
-      bookings
-        .filter(
-          (booking) =>
-            booking.restaurantId === restaurant.id &&
-            booking.date === selectedDate &&
-            booking.time === slot &&
-            bookingHoldsTable(booking) &&
-            typeof booking.tableNumber === "number",
-        )
-        .map((booking) => booking.tableNumber as number),
-    );
-
-    return (
-      tableInventory.find(
-        (table) => table.seats >= guests && !occupiedTables.has(table.number),
-      ) || null
-    );
-  };
-
-  const suggestedTable = selectedTime ? getSuggestedTable(selectedTime) : null;
-  const canBookSlot = (slot: string) => !!getSuggestedTable(slot);
+  const suggestedTable = selectedTime ? getSlotTable(selectedTime) : null;
+  const bookableSlots = getBookableSlots({
+    slots: restaurant.availableSlots,
+    bookings,
+    restaurantId: restaurant.id,
+    date: selectedDate,
+    guests,
+    currentBookingId: bookingToModify?.id,
+    currentTableNumber: bookingToModify?.tableNumber,
+  });
+  const bookableSlotSet = new Set(bookableSlots);
+  const hasAvailabilityForSelection = bookableSlots.length > 0;
 
   const handleBook = () => {
     if (!selectedTime || !bookingName.trim() || !bookingEmail.trim()) {
@@ -173,31 +164,56 @@ const BookTablePage = () => {
       return;
     }
 
-    const table = getSuggestedTable(selectedTime);
+    const table = getSlotTable(selectedTime);
     if (!table) {
       toast.error("No table available for this slot. Please choose another time.");
       return;
     }
 
-    const bookingReference = generateBookingReference();
+    const bookingReference =
+      bookingToModify?.bookingReference ?? generateBookingReference();
 
-    addBooking({
-      bookingReference,
-      restaurantId: restaurant.id,
-      restaurantName: restaurant.name,
-      restaurantImage: restaurant.image,
-      date: selectedDate,
-      time: selectedTime,
-      guests,
-      status: "upcoming",
-      specialRequests: specialRequests || undefined,
-      tableNumber: table.number,
-      bookingName: bookingName.trim(),
-      bookingEmail: bookingEmail.trim(),
-    });
+    if (bookingToModify) {
+      const result = updateBooking(bookingToModify.id, {
+        date: selectedDate,
+        time: selectedTime,
+        guests,
+        specialRequests: specialRequests || undefined,
+        tableNumber: table.number,
+        bookingName: bookingName.trim(),
+        bookingEmail: bookingEmail.trim(),
+      });
+
+      if (!result.success) {
+        toast.error(result.message);
+        return;
+      }
+
+      toast.success(result.message);
+    } else {
+      addBooking({
+        bookingReference,
+        restaurantId: restaurant.id,
+        restaurantName: restaurant.name,
+        restaurantImage: restaurant.image,
+        date: selectedDate,
+        time: selectedTime,
+        guests,
+        status: "upcoming",
+        specialRequests: specialRequests || undefined,
+        tableNumber: table.number,
+        bookingName: bookingName.trim(),
+        bookingEmail: bookingEmail.trim(),
+      });
+    }
 
     navigate("/booking-confirmation", {
       state: {
+        isModification: !!bookingToModify,
+        title: bookingToModify ? "Booking Updated!" : "Booking Confirmed!",
+        message: bookingToModify
+          ? "Your reservation has been updated successfully"
+          : "Your table has been reserved successfully",
         restaurantName: restaurant.name,
         restaurantImage: restaurant.image,
         restaurantAddress: restaurant.address,
@@ -222,12 +238,19 @@ const BookTablePage = () => {
       <div className="safe-area-top bg-foreground">
         <div className="flex items-center gap-3 px-5 py-3">
           <button
-            onClick={() => goBackOr(navigate, `/restaurant/${restaurant.id}`)}
+            onClick={() =>
+              goBackOr(
+                navigate,
+                isModifyMode ? "/history" : `/restaurant/${restaurant.id}`,
+              )
+            }
             className="rounded-full p-2 hover:bg-background/10 active:scale-90 transition-all"
           >
             <ArrowLeft className="h-5 w-5 text-background" />
           </button>
-          <h1 className="text-lg font-bold text-background">Book a Table</h1>
+          <h1 className="text-lg font-bold text-background">
+            {isModifyMode ? "Modify Booking" : "Book a Table"}
+          </h1>
         </div>
 
         <div className="mx-5 mb-4 rounded-2xl border border-background/15 p-4">
@@ -343,9 +366,20 @@ const BookTablePage = () => {
             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mb-2.5">
               <Clock className="h-3 w-3" /> Time
             </p>
+            {!hasAvailabilityForSelection && (
+              <div className="mb-3 rounded-xl bg-destructive/5 px-3 py-2.5">
+                <p className="text-sm font-semibold text-destructive">
+                  Fully booked for this date
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Try another date or adjust your party size to find an available
+                  table.
+                </p>
+              </div>
+            )}
             <div className="flex gap-2 flex-wrap">
               {restaurant.availableSlots.map((slot) => {
-                const unavailable = !canBookSlot(slot);
+                const unavailable = !bookableSlotSet.has(slot);
                 return (
                   <button
                     key={slot}
@@ -398,7 +432,16 @@ const BookTablePage = () => {
             <p className="text-[11px] font-medium text-muted-foreground">
               Availability check
             </p>
-            {!selectedTime ? (
+            {!hasAvailabilityForSelection ? (
+              <p className="mt-1 text-sm font-semibold text-destructive">
+                No tables available on{" "}
+                {selectedDateObj.toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}{" "}
+                for {guests} guest{guests > 1 ? "s" : ""}.
+              </p>
+            ) : !selectedTime ? (
               <p className="mt-1 text-xs text-muted-foreground">
                 Select a time to check availability and suggested table.
               </p>
@@ -463,9 +506,14 @@ const BookTablePage = () => {
             variant="cta"
             size="lg"
             className="w-full mb-4"
+            disabled={!hasAvailabilityForSelection}
             onClick={handleBook}
           >
-            Confirm Booking
+            {!hasAvailabilityForSelection
+              ? "No Tables Available"
+              : isModifyMode
+                ? "Save Changes"
+                : "Confirm Booking"}
           </Button>
         </div>
       </div>

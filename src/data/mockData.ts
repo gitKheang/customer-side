@@ -7,6 +7,15 @@ import food2 from "@/assets/food/food-2.jpeg";
 import food3 from "@/assets/food/food-3.jpeg";
 import food4 from "@/assets/food/food-4.jpeg";
 
+export interface RestaurantStory {
+  id: string;
+  image: string;
+  headline: string;
+  caption: string;
+  postedAt: string;
+  durationSeconds?: number;
+}
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -24,6 +33,7 @@ export interface Restaurant {
   type: "restaurant" | "pub" | "cafe" | "nightclub";
   availableSlots: string[];
   menu: { name: string; price: string; category: string; image: string }[];
+  stories?: RestaurantStory[];
 }
 
 export interface Booking {
@@ -35,7 +45,7 @@ export interface Booking {
   date: string;
   time: string;
   guests: number;
-  status: "upcoming" | "completed" | "cancelled" | "modified";
+  status: "upcoming" | "completed" | "cancelled";
   specialRequests?: string;
   tableNumber?: number;
   bookingName: string;
@@ -104,6 +114,26 @@ export const mockRestaurants: Restaurant[] = [
         image: food4,
       },
     ],
+    stories: [
+      {
+        id: "1-story-1",
+        image: restaurant1,
+        headline: "Candlelit tasting room tonight",
+        caption:
+          "Chef Marco is serving the truffle tasting menu until 10pm in the front dining room.",
+        postedAt: "2026-03-09T06:30:00.000Z",
+        durationSeconds: 5,
+      },
+      {
+        id: "1-story-2",
+        image: food2,
+        headline: "Fresh wagyu just left the grill",
+        caption:
+          "Limited late-dinner plates are available for guests booking after 8pm.",
+        postedAt: "2026-03-09T07:15:00.000Z",
+        durationSeconds: 5,
+      },
+    ],
   },
   {
     id: "2",
@@ -146,6 +176,26 @@ export const mockRestaurants: Restaurant[] = [
         price: "$10",
         category: "Dessert",
         image: food1,
+      },
+    ],
+    stories: [
+      {
+        id: "2-story-1",
+        image: restaurant2,
+        headline: "Fresh bluefin arrived this afternoon",
+        caption:
+          "Tonight's omakase now includes bluefin tuna and Hokkaido uni at the sushi counter.",
+        postedAt: "2026-03-09T05:20:00.000Z",
+        durationSeconds: 5,
+      },
+      {
+        id: "2-story-2",
+        image: food3,
+        headline: "Counter seats just reopened",
+        caption:
+          "Two 8:30pm seats are now available for guests who want the full omakase experience.",
+        postedAt: "2026-03-09T06:50:00.000Z",
+        durationSeconds: 5,
       },
     ],
   },
@@ -243,6 +293,17 @@ export const mockRestaurants: Restaurant[] = [
         image: food3,
       },
     ],
+    stories: [
+      {
+        id: "4-story-1",
+        image: restaurant4,
+        headline: "Sunset tables are live on the rooftop",
+        caption:
+          "Golden-hour bookings are open from 6pm with skyline views and cocktail service.",
+        postedAt: "2026-03-09T04:40:00.000Z",
+        durationSeconds: 5,
+      },
+    ],
   },
   {
     id: "5",
@@ -285,6 +346,17 @@ export const mockRestaurants: Restaurant[] = [
         price: "$3",
         category: "Pastry",
         image: food4,
+      },
+    ],
+    stories: [
+      {
+        id: "5-story-1",
+        image: food2,
+        headline: "Flat whites are pouring all afternoon",
+        caption:
+          "Quick coffee and sandwich pickups are moving fast for the lunch rush today.",
+        postedAt: "2026-03-09T02:10:00.000Z",
+        durationSeconds: 5,
       },
     ],
   },
@@ -406,15 +478,4 @@ export const mockReviews: Review[] = [
       "Fast service and reliable coffee. Good option for a quick lunch break.",
     createdAt: "2026-02-22T11:25:00.000Z",
   },
-];
-
-export const cuisineTypes = [
-  "Italian",
-  "Japanese",
-  "Indian",
-  "Chinese",
-  "Thai",
-  "Mexican",
-  "French",
-  "Korean",
 ];

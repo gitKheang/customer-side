@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { mockRestaurants, type Review } from "@/data/mockData";
 import {
   ArrowLeft,
+  CirclePlay,
   Heart,
   Star,
   Clock,
@@ -11,14 +12,27 @@ import {
   Navigation,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import RestaurantStoryViewer from "@/components/RestaurantStoryViewer";
 import { motion } from "framer-motion";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBookings } from "@/contexts/BookingsContext";
 import { useReviews } from "@/contexts/ReviewsContext";
+import { useRestaurantStoryState } from "@/hooks/useRestaurantStoryState";
+import {
+  formatStoryAge,
+  getRestaurantStoryGroups,
+  hasRestaurantStories,
+} from "@/lib/restaurantStories";
 import { toast } from "sonner";
 import { goBackOr } from "@/lib/navigation";
 import mapPreview from "@/assets/map/Screenshot 2026-03-08 at 12.04.44 in the afternoon.png";
+import {
+  DEFAULT_DISCOVERY_GUESTS,
+  formatDateISO,
+  getBookableSlots,
+  getBookingDateTime,
+} from "@/lib/bookingAvailability";
 
 const formatReviewCount = (count: number) => {
   if (count >= 1000) {
@@ -35,20 +49,6 @@ const formatReviewDate = (date: string) => {
   });
 };
 
-const convertTo24h = (time12h: string) => {
-  const match = time12h.match(/^(\d{1,2}):(\d{2})(am|pm)$/i);
-  if (!match) return "00:00";
-  let hours = parseInt(match[1], 10);
-  const minutes = match[2];
-  const period = match[3].toLowerCase();
-  if (period === "pm" && hours !== 12) hours += 12;
-  if (period === "am" && hours === 12) hours = 0;
-  return `${hours.toString().padStart(2, "0")}:${minutes}`;
-};
-
-const getBookingDateTime = (date: string, time: string) =>
-  new Date(`${date}T${convertTo24h(time)}:00`);
-
 const RestaurantDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -56,6 +56,8 @@ const RestaurantDetailPage = () => {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { user, isAuthenticated, isGuest } = useAuth();
   const { bookings } = useBookings();
+  const { isRestaurantStorySeen, markRestaurantStorySeen } =
+    useRestaurantStoryState();
   const {
     getRestaurantStats,
     getReviewsForRestaurant,
@@ -68,6 +70,8 @@ const RestaurantDetailPage = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
+  const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
+  const storyGroups = restaurant ? getRestaurantStoryGroups([restaurant]) : [];
 
   if (!restaurant) {
     return (
@@ -78,6 +82,8 @@ const RestaurantDetailPage = () => {
   }
 
   const ratingStats = getRestaurantStats(restaurant);
+  const latestStory = restaurant.stories?.[restaurant.stories.length - 1];
+  const showStoryEntry = hasRestaurantStories(restaurant);
   const restaurantReviews = getReviewsForRestaurant(restaurant.id);
   const userEmail = user?.email?.trim().toLowerCase() || "";
   const isSignedInUser = isAuthenticated && !isGuest && !!userEmail;
@@ -85,6 +91,16 @@ const RestaurantDetailPage = () => {
     ? hasUserReviewed(restaurant.id, userEmail)
     : false;
   const photoGallery = [restaurant.image, ...restaurant.menu.map((m) => m.image)];
+  const todayIso = formatDateISO(new Date());
+  const bookableSlotsToday = getBookableSlots({
+    slots: restaurant.availableSlots,
+    bookings,
+    restaurantId: restaurant.id,
+    date: todayIso,
+    guests: DEFAULT_DISCOVERY_GUESTS,
+  });
+  const bookableSlotsTodaySet = new Set(bookableSlotsToday);
+  const hasAvailabilityToday = bookableSlotsToday.length > 0;
 
   const existingUserReview = isSignedInUser
     ? restaurantReviews.find(
@@ -97,9 +113,7 @@ const RestaurantDetailPage = () => {
         if (booking.bookingEmail.toLowerCase() !== userEmail) return false;
 
         if (booking.status === "completed") return true;
-        if (booking.status === "cancelled" || booking.status === "modified") {
-          return false;
-        }
+        if (booking.status === "cancelled") return false;
 
         const bookingDateTime = getBookingDateTime(booking.date, booking.time);
         return !Number.isNaN(bookingDateTime.getTime()) && bookingDateTime < new Date();
@@ -238,7 +252,23 @@ const RestaurantDetailPage = () => {
               {formatReviewCount(ratingStats.reviewCount)} Reviews)
             </span>
           </div>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
+            {showStoryEntry && latestStory && (
+              <button
+                onClick={() => setIsStoryViewerOpen(true)}
+                className={`flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-medium backdrop-blur-md active:scale-95 transition-transform ${
+                  isRestaurantStorySeen(restaurant)
+                    ? "bg-background/15 text-background"
+                    : "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                }`}
+              >
+                <CirclePlay className="h-3.5 w-3.5" />
+                {isRestaurantStorySeen(restaurant) ? "View Story" : "New Story"}
+                <span className="opacity-70">
+                  {formatStoryAge(latestStory.postedAt)} ago
+                </span>
+              </button>
+            )}
             <button
               onClick={handleMoreInfo}
               className="flex items-center gap-1.5 rounded-full bg-background/15 backdrop-blur-md px-4 py-2.5 text-xs font-medium text-background active:scale-95 transition-transform"
@@ -260,7 +290,9 @@ const RestaurantDetailPage = () => {
       <div className="flex-1 overflow-y-auto scrollbar-hide -mt-2">
         <div className="rounded-t-3xl bg-background pt-6 px-5 pb-5 space-y-5">
           <div id="restaurant-description">
-            <h3 className="text-sm font-bold text-foreground">Restaurant story</h3>
+            <h3 className="text-sm font-bold text-foreground">
+              About this restaurant
+            </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
               {restaurant.description}
             </p>
@@ -513,20 +545,38 @@ const RestaurantDetailPage = () => {
             <h3 className="text-sm font-bold text-foreground">
               Available slots for today
             </h3>
+            {!hasAvailabilityToday && (
+              <div className="mt-3 rounded-2xl border border-destructive/15 bg-destructive/5 p-3">
+                <p className="text-sm font-semibold text-foreground">
+                  Fully booked today
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  All tables are currently reserved. Check another date to book
+                  this restaurant.
+                </p>
+              </div>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
-              {restaurant.availableSlots.map((slot) => (
-                <button
-                  key={slot}
-                  onClick={() => setSelectedSlot(slot)}
-                  className={`rounded-xl border px-4 py-2.5 text-xs font-medium transition-all active:scale-95 ${
-                    selectedSlot === slot
-                      ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                      : "border-border text-foreground hover:border-primary/30"
-                  }`}
-                >
-                  {slot}
-                </button>
-              ))}
+              {restaurant.availableSlots.map((slot) => {
+                const unavailable = !bookableSlotsTodaySet.has(slot);
+
+                return (
+                  <button
+                    key={slot}
+                    disabled={unavailable}
+                    onClick={() => setSelectedSlot(slot)}
+                    className={`rounded-xl border px-4 py-2.5 text-xs font-medium transition-all active:scale-95 ${
+                      unavailable
+                        ? "border-border bg-muted text-muted-foreground cursor-not-allowed line-through"
+                        : selectedSlot === slot
+                          ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                          : "border-border text-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    {slot}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -556,7 +606,7 @@ const RestaurantDetailPage = () => {
                 navigate(`/book/${restaurant.id}`);
               }}
             >
-              Book a Table
+              {hasAvailabilityToday ? "Book a Table" : "Check Another Date"}
             </Button>
           </div>
 
@@ -600,6 +650,18 @@ const RestaurantDetailPage = () => {
           )}
         </div>
       </div>
+
+      <RestaurantStoryViewer
+        groups={storyGroups}
+        initialRestaurantId={restaurant.id}
+        open={isStoryViewerOpen}
+        onClose={() => setIsStoryViewerOpen(false)}
+        onRestaurantSeen={markRestaurantStorySeen}
+        primaryActionLabel="Book Table"
+        onPrimaryAction={(currentRestaurant) =>
+          navigate(`/book/${currentRestaurant.id}`)
+        }
+      />
     </div>
   );
 };

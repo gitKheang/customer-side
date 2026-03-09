@@ -25,7 +25,19 @@ interface BookingsContextType {
   notifications: Notification[];
   addBooking: (booking: Omit<Booking, "id">) => void;
   cancelBooking: (id: string) => { success: boolean; message: string };
-  modifyBooking: (id: string) => { success: boolean; message: string };
+  updateBooking: (
+    id: string,
+    updates: Pick<
+      Booking,
+      | "date"
+      | "time"
+      | "guests"
+      | "specialRequests"
+      | "tableNumber"
+      | "bookingName"
+      | "bookingEmail"
+    >,
+  ) => { success: boolean; message: string };
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   unreadCount: number;
@@ -41,6 +53,7 @@ export const useBookings = () => {
 
 const BOOKINGS_KEY = "rra_bookings";
 const NOTIFICATIONS_KEY = "rra_notifications";
+type StoredBooking = Booking | (Omit<Booking, "status"> & { status: "modified" });
 
 function getStored<T>(key: string, fallback: T): T {
   try {
@@ -51,9 +64,19 @@ function getStored<T>(key: string, fallback: T): T {
   }
 }
 
+const normalizeStoredBookings = (bookings: StoredBooking[]): Booking[] =>
+  bookings.map((booking) =>
+    booking.status === "modified"
+      ? {
+          ...booking,
+          status: "upcoming" as const,
+        }
+      : booking,
+  );
+
 export const BookingsProvider = ({ children }: { children: ReactNode }) => {
   const [bookings, setBookings] = useState<Booking[]>(() =>
-    getStored(BOOKINGS_KEY, mockBookings),
+    normalizeStoredBookings(getStored<StoredBooking[]>(BOOKINGS_KEY, mockBookings)),
   );
   const [notifications, setNotifications] = useState<Notification[]>(() =>
     getStored(NOTIFICATIONS_KEY, []),
@@ -128,29 +151,49 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     return { success: true, message: "Booking cancelled successfully" };
   };
 
-  const modifyBooking = (id: string) => {
+  const updateBooking = (
+    id: string,
+    updates: Pick<
+      Booking,
+      | "date"
+      | "time"
+      | "guests"
+      | "specialRequests"
+      | "tableNumber"
+      | "bookingName"
+      | "bookingEmail"
+    >,
+  ) => {
     const booking = bookings.find((b) => b.id === id);
     if (!booking) return { success: false, message: "Booking not found" };
     if (booking.status !== "upcoming") {
       return {
         success: false,
-        message: "Only upcoming bookings can be modified",
+        message: "Only upcoming bookings can be updated",
       };
     }
 
     setBookings((prev) =>
       prev.map((b) =>
-        b.id === id ? { ...b, status: "modified" as const } : b,
+        b.id === id
+          ? {
+              ...b,
+              ...updates,
+              status: "upcoming" as const,
+            }
+          : b,
       ),
     );
+
     addNotification({
       type: "booking_modified",
-      title: "Booking Modified",
-      message: `Your reservation at ${booking.restaurantName} was marked as modified. Please create a new reservation time.`,
+      title: "Booking Updated",
+      message: `Your reservation ${booking.bookingReference} at ${booking.restaurantName} has been updated to ${updates.date} at ${updates.time}.`,
     });
+
     return {
       success: true,
-      message: "Booking marked as modified. Please select a new reservation.",
+      message: "Booking updated successfully",
     };
   };
 
@@ -173,7 +216,7 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
         notifications,
         addBooking,
         cancelBooking,
-        modifyBooking,
+        updateBooking,
         markNotificationRead,
         markAllNotificationsRead,
         unreadCount,

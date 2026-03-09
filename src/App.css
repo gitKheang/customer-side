@@ -2,6 +2,7 @@ html,
 body {
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -14,9 +15,14 @@ body {
 }
 
 #root {
-  width: 402px;
-  height: 874px;
+  --app-width: 402px;
+  --app-height: 874px;
+
+  width: var(--app-width);
+  height: var(--app-height);
   margin: 0 auto;
   overflow: hidden;
   position: relative;
+  flex: none;
+  transform: translateZ(0);
 }

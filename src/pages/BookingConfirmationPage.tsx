@@ -20,16 +20,6 @@ const BookingConfirmationPage = () => {
     return <Navigate to="/home" replace />;
   }
 
-  const openDirections = () => {
-    if (!state.restaurantAddress) return;
-    const destination = encodeURIComponent(state.restaurantAddress);
-    window.open(
-      `https://www.google.com/maps/dir/?api=1&origin=Current+Location&destination=${destination}&travelmode=driving`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-  };
-
   const details = [
     { icon: Hash, label: "Reference", value: state.bookingReference },
     { icon: CalendarDays, label: "Date", value: state.date },
@@ -46,8 +36,10 @@ const BookingConfirmationPage = () => {
   ];
 
   return (
-    <div className="flex h-full flex-col bg-background safe-area-top px-5">
-      <div className="flex flex-1 flex-col items-center justify-center">
+    <div className="flex h-full flex-col bg-background">
+      <div className="safe-area-top" />
+      <div className="flex-1 overflow-y-auto px-5 pb-8 scrollbar-hide">
+        <div className="flex min-h-full flex-col items-center">
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -64,10 +56,10 @@ const BookingConfirmationPage = () => {
           className="text-center"
         >
           <h1 className="text-2xl font-bold text-foreground">
-            Booking Confirmed!
+            {state.title || "Booking Confirmed!"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your table has been reserved successfully
+            {state.message || "Your table has been reserved successfully"}
           </p>
         </motion.div>
 
@@ -128,16 +120,8 @@ const BookingConfirmationPage = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-8 w-full space-y-3 mb-8"
+          className="mb-8 mt-8 w-full"
         >
-          <Button
-            variant="cta"
-            size="lg"
-            className="w-full"
-            onClick={() => navigate("/home")}
-          >
-            Back to Home
-          </Button>
           <Button
             variant="outline"
             size="lg"
@@ -146,17 +130,8 @@ const BookingConfirmationPage = () => {
           >
             View My Bookings
           </Button>
-          {state.restaurantAddress && (
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full"
-              onClick={openDirections}
-            >
-              Get Directions
-            </Button>
-          )}
         </motion.div>
+        </div>
       </div>
     </div>
   );
