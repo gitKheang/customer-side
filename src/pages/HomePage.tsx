@@ -160,22 +160,28 @@ const HomePage = () => {
                     className="w-[76px] shrink-0 text-left"
                   >
                     <div
-                      className={`inline-flex rounded-[1.2rem] border-[3px] p-[3px] transition-all ${
+                      className={`inline-flex rounded-[1rem] p-[2px] transition-all ${
                         isSeen
-                          ? "border-border bg-transparent"
-                          : "border-primary bg-primary shadow-lg shadow-primary/30"
+                          ? "bg-border/90"
+                          : "bg-[linear-gradient(145deg,#f1d474_0%,#ddb122_55%,#bc8d0a_100%)] shadow-[0_10px_18px_-12px_rgba(149,111,10,0.75)]"
                       }`}
                     >
-                      <div className="relative h-16 w-16 overflow-hidden rounded-[0.95rem]">
-                        <img
-                          src={group.latestStory.image}
-                          alt={group.restaurant.name}
-                          className="h-full w-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
-                        <span className="absolute left-1.5 top-1.5 rounded-full bg-background/90 px-1.5 py-0.5 text-[9px] font-semibold text-foreground">
-                          {group.stories.length}
-                        </span>
+                      <div
+                        className={`rounded-[0.85rem] p-[1px] ${
+                          isSeen ? "bg-background" : "bg-[#f8efc7]"
+                        }`}
+                      >
+                        <div className="relative h-16 w-16 overflow-hidden rounded-[0.78rem]">
+                          <img
+                            src={group.latestStory.image}
+                            alt={group.restaurant.name}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+                          <span className="absolute left-1.5 top-1.5 rounded-full bg-background/90 px-1.5 py-0.5 text-[9px] font-semibold text-foreground">
+                            {group.stories.length}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <p className="mt-2 truncate text-[11px] font-semibold text-foreground">
