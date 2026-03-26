@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-restaurant.jpg";
-import { Utensils, CalendarDays, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const slides = [
@@ -38,35 +37,9 @@ const WelcomePage = () => {
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
-        <div className="absolute bottom-14 left-0 right-0 flex justify-center gap-4">
-          {[
-            { Icon: Utensils, bg: "bg-primary", shadow: "shadow-primary/30" },
-            {
-              Icon: CalendarDays,
-              bg: "bg-destructive",
-              shadow: "shadow-destructive/30",
-            },
-            { Icon: Clock, bg: "bg-warning", shadow: "shadow-warning/30" },
-          ].map(({ Icon, bg, shadow }, i) => (
-            <motion.div
-              key={i}
-              initial={{ scale: 0, y: 30 }}
-              animate={{ scale: 1, y: 0 }}
-              transition={{
-                delay: 0.3 + i * 0.12,
-                type: "spring",
-                stiffness: 260,
-                damping: 20,
-              }}
-              className={`rounded-2xl p-3.5 shadow-lg ${bg} ${shadow} text-background`}
-            >
-              <Icon className="h-6 w-6" />
-            </motion.div>
-          ))}
-        </div>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-between px-5 pb-10 pt-5">
+      <div className="flex flex-1 flex-col items-center justify-between px-5 pb-10 pt-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={current}

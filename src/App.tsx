@@ -11,6 +11,21 @@ import { ReviewsProvider } from "@/contexts/ReviewsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import WelcomePage from "@/pages/WelcomePage";
 import SignUpPage from "@/pages/SignUpPage";
+import CustomerSignUpPage from "@/pages/CustomerSignUpPage";
+import RestaurantAccessPage from "@/pages/RestaurantAccessPage";
+import RestaurantApplicationPendingPage from "@/pages/RestaurantApplicationPendingPage";
+import RestaurantDashboardPage from "@/pages/RestaurantDashboardPage";
+import RestaurantMenuPage from "@/pages/RestaurantMenuPage";
+import RestaurantTablesPage from "@/pages/RestaurantTablesPage";
+import RestaurantBookingsPage from "@/pages/RestaurantBookingsPage";
+import RestaurantProfilePage from "@/pages/RestaurantProfilePage";
+import RestaurantNotificationsPage from "@/pages/RestaurantNotificationsPage";
+import RestaurantSettingsPage from "@/pages/RestaurantSettingsPage";
+import RestaurantStoryPage from "@/pages/RestaurantStoryPage";
+import RestaurantEditProfilePage from "@/pages/RestaurantEditProfilePage";
+import RestaurantNotificationSettingsPage from "@/pages/RestaurantNotificationSettingsPage";
+import RestaurantFavoritesPage from "@/pages/RestaurantFavoritesPage";
+import RestaurantLanguagePage from "@/pages/RestaurantLanguagePage";
 import SignInPage from "@/pages/SignInPage";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -68,6 +83,66 @@ const App = () => (
                       }
                     />
                     <Route path="/signup" element={<SignUpPage />} />
+                    <Route
+                      path="/signup/customer"
+                      element={<CustomerSignUpPage />}
+                    />
+                    <Route
+                      path="/restaurant-access"
+                      element={<RestaurantAccessPage />}
+                    />
+                    <Route
+                      path="/restaurant-application-pending"
+                      element={<RestaurantApplicationPendingPage />}
+                    />
+                    <Route
+                      path="/restaurant-dashboard"
+                      element={<RestaurantDashboardPage />}
+                    />
+                    <Route
+                      path="/restaurant-menu"
+                      element={<RestaurantMenuPage />}
+                    />
+                    <Route
+                      path="/restaurant-tables"
+                      element={<RestaurantTablesPage />}
+                    />
+                    <Route
+                      path="/restaurant-bookings"
+                      element={<RestaurantBookingsPage />}
+                    />
+                    <Route
+                      path="/restaurant-profile"
+                      element={<RestaurantProfilePage />}
+                    />
+                    <Route
+                      path="/restaurant-notifications"
+                      element={<RestaurantNotificationsPage />}
+                    />
+                    <Route
+                      path="/restaurant-settings"
+                      element={<RestaurantSettingsPage />}
+                    />
+                    <Route
+                      path="/restaurant-stories"
+                      element={<RestaurantStoryPage />}
+                    />
+                    <Route
+                      path="/restaurant-edit-profile"
+                      element={<RestaurantEditProfilePage />}
+                    />
+                    <Route
+                      path="/restaurant-notification-settings"
+                      element={<RestaurantNotificationSettingsPage />}
+                    />
+                    <Route
+                      path="/restaurant-favorites"
+                      element={<RestaurantFavoritesPage />}
+                    />
+                    <Route
+                      path="/restaurant-language"
+                      element={<RestaurantLanguagePage />}
+                    />
                     <Route path="/signin" element={<SignInPage />} />
                     <Route path="/verify" element={<VerifyEmailPage />} />
                     <Route

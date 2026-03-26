@@ -2,36 +2,37 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, LogIn } from "lucide-react";
+import { ArrowLeft, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { goBackOr } from "@/lib/navigation";
 import { isValidIdentifier } from "@/lib/authValidation";
 
-const SignInPage = () => {
+const CustomerSignUpPage = () => {
   const navigate = useNavigate();
-  const { login, socialAuth } = useAuth();
+  const { signup, socialAuth } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const canSignIn = isValidIdentifier(identifier) && !!password;
+  const canContinue = isValidIdentifier(identifier) && password.length >= 6;
 
-  const handleSocialSignIn = (provider: "google" | "apple") => {
+  const handleSocialSignUp = (provider: "google" | "apple") => {
     const result = socialAuth(provider);
     if (result.success) {
       toast.success(result.message);
       navigate("/home");
       return;
     }
-    toast.error("Unable to continue with social sign in");
+    toast.error("Unable to continue with social sign up");
   };
 
   return (
     <div className="flex h-full flex-col bg-background safe-area-top">
       <div className="px-5">
         <button
-          onClick={() => goBackOr(navigate, "/")}
-          className="mb-5 mt-3 self-start p-2 rounded-full hover:bg-secondary transition-colors active:scale-90"
+          onClick={() => goBackOr(navigate, "/signup")}
+          className="mb-5 mt-3 self-start rounded-full p-2 transition-colors hover:bg-secondary active:scale-90"
+          aria-label="Go back"
         >
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
@@ -43,12 +44,15 @@ const SignInPage = () => {
         className="flex flex-1 flex-col items-center px-5"
       >
         <div className="mb-5 rounded-2xl bg-primary/10 p-4">
-          <LogIn className="h-7 w-7 text-primary" />
+          <UserPlus className="h-7 w-7 text-primary" />
         </div>
 
-        <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-        <p className="mt-2 text-center text-sm text-muted-foreground leading-relaxed">
-          Sign in to manage your bookings{"\n"}and discover restaurants
+        <h1 className="text-2xl font-bold text-foreground">
+          Create an account
+        </h1>
+        <p className="mt-2 text-center text-sm leading-relaxed text-muted-foreground">
+          To get personal perks, book your table{"\n"}and create your memories
+          with us
         </p>
 
         <div className="mt-8 w-full space-y-3.5">
@@ -62,7 +66,7 @@ const SignInPage = () => {
           />
           <Input
             type="password"
-            placeholder="Enter your password"
+            placeholder="Create a password (min 6 chars)"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="h-14 rounded-2xl bg-secondary/50 px-5 text-center focus:ring-1 focus:ring-primary/20"
@@ -72,30 +76,23 @@ const SignInPage = () => {
             variant="cta"
             size="lg"
             className="w-full"
-            disabled={!canSignIn}
+            disabled={!canContinue}
             onClick={() => {
-              const result = login(identifier, password);
+              const result = signup(identifier, password);
               if (result.success) {
-                navigate(result.role === "restaurant" ? "/restaurant-dashboard" : "/home");
+                navigate("/verify");
               } else {
                 toast.error(result.message);
               }
             }}
           >
-            Sign in
+            Next
           </Button>
-
-          <button
-            className="text-xs font-medium text-primary self-center"
-            onClick={() => navigate("/reset-password")}
-          >
-            Forgot password?
-          </button>
         </div>
 
         <div className="my-7 flex w-full items-center gap-4">
           <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground font-medium">Or</span>
+          <span className="text-xs font-medium text-muted-foreground">Or</span>
           <div className="h-px flex-1 bg-border" />
         </div>
 
@@ -104,7 +101,7 @@ const SignInPage = () => {
             variant="outline"
             size="lg"
             className="w-full gap-3"
-            onClick={() => handleSocialSignIn("google")}
+            onClick={() => handleSocialSignUp("google")}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path
@@ -124,29 +121,29 @@ const SignInPage = () => {
                 fill="#EA4335"
               />
             </svg>
-            Sign in with Google
+            Sign up with Google
           </Button>
 
           <Button
             variant="outline"
             size="lg"
             className="w-full gap-3"
-            onClick={() => handleSocialSignIn("apple")}
+            onClick={() => handleSocialSignUp("apple")}
           >
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
             </svg>
-            Sign in with Apple
+            Sign up with Apple
           </Button>
         </div>
 
-        <p className="mt-auto mb-8 text-sm text-muted-foreground">
-          Don't have an account?{" "}
+        <p className="mb-8 mt-auto text-sm text-muted-foreground">
+          Already have an account?{" "}
           <button
             className="font-semibold text-primary"
-            onClick={() => navigate("/signup")}
+            onClick={() => navigate("/signin")}
           >
-            Sign up
+            log in
           </button>
         </p>
       </motion.div>
@@ -154,4 +151,4 @@ const SignInPage = () => {
   );
 };
 
-export default SignInPage;
+export default CustomerSignUpPage;

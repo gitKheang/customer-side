@@ -16,6 +16,7 @@ export interface User {
   email: string;
   phone: string;
   photo: string | null;
+  role?: "customer" | "restaurant";
 }
 
 interface StoredUser extends User {
@@ -30,7 +31,7 @@ interface AuthContextType {
   login: (
     identifier: string,
     password: string,
-  ) => { success: boolean; message: string };
+  ) => { success: boolean; message: string; role?: "customer" | "restaurant" };
   signup: (
     identifier: string,
     password: string,
@@ -121,16 +122,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isGuest, setIsGuest] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
-  // Restore session on mount
+  // Seed restaurant owner account & restore session on mount
   useEffect(() => {
+    const users = getStoredUsers();
+    const restaurantOwner = findUserByIdentifier(users, "s@gmail.com");
+    if (!restaurantOwner) {
+      const ownerAccount: StoredUser = {
+        name: "Phorn Sinet",
+        email: "s@gmail.com",
+        phone: "+855 12 888 001",
+        photo: null,
+        role: "restaurant",
+        password: "11111111",
+      };
+      saveStoredUsers([...users, ownerAccount]);
+    }
+
     const session = getSession();
     if (session) {
       if (session.isGuest) {
         setIsGuest(true);
         setUser(null);
       } else {
-        const users = getStoredUsers();
-        const found = findUserByIdentifier(users, session.identifier);
+        const latestUsers = getStoredUsers();
+        const found = findUserByIdentifier(latestUsers, session.identifier);
         if (found) {
           const { password: _, ...userData } = found;
           setUser(userData);
@@ -208,7 +223,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(userData);
     setIsGuest(false);
     saveSession({ identifier: normalizedIdentifier, isGuest: false });
-    return { success: true, message: "Logged in successfully" };
+    return { success: true, message: "Logged in successfully", role: found.role };
   };
 
   const guestLogin = () => {

@@ -34,7 +34,7 @@ const VerifyEmailPage = () => {
     <div className="flex h-full flex-col bg-background safe-area-top">
       <div className="px-5">
         <button
-          onClick={() => goBackOr(navigate, "/signup")}
+          onClick={() => goBackOr(navigate, "/signup/customer")}
           className="mb-5 mt-3 self-start p-2 rounded-full hover:bg-secondary transition-colors active:scale-90"
         >
           <ArrowLeft className="h-5 w-5 text-foreground" />

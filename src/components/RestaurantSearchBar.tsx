@@ -13,6 +13,7 @@ interface RestaurantSearchBarProps {
   className?: string;
   disableSuggestionAnimation?: boolean;
   forceSuggestionsOpen?: boolean;
+  formClassName?: string;
   inputClassName?: string;
   placeholder: string;
   query: string;
@@ -26,6 +27,7 @@ const RestaurantSearchBar = ({
   className,
   disableSuggestionAnimation = false,
   forceSuggestionsOpen = false,
+  formClassName,
   inputClassName,
   placeholder,
   query,
@@ -61,7 +63,10 @@ const RestaurantSearchBar = ({
     <div ref={wrapperRef} className={cn("relative", className)} onBlur={handleBlur}>
       <form
         onSubmit={handleSubmit}
-        className="flex min-w-0 items-center gap-2.5 rounded-2xl bg-secondary px-4 py-3.5"
+        className={cn(
+          "flex min-w-0 items-center gap-2.5 rounded-2xl bg-secondary px-4 py-3.5",
+          formClassName,
+        )}
       >
         <button
           type="submit"
