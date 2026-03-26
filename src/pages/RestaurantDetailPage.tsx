@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { mockRestaurants, type Review } from "@/data/mockData";
+import { type Review } from "@/data/mockData";
 import {
   ArrowLeft,
   CirclePlay,
@@ -18,6 +18,7 @@ import { useFavorites } from "@/contexts/FavoritesContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBookings } from "@/contexts/BookingsContext";
 import { useReviews } from "@/contexts/ReviewsContext";
+import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 import { useRestaurantStoryState } from "@/hooks/useRestaurantStoryState";
 import {
   formatStoryAge,
@@ -51,7 +52,8 @@ const formatReviewDate = (date: string) => {
 const RestaurantDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const restaurant = mockRestaurants.find((r) => r.id === id);
+  const { getRestaurantById } = useRestaurantData();
+  const restaurant = getRestaurantById(id || "");
   const { isFavorite, toggleFavorite } = useFavorites();
   const { user, isAuthenticated, isGuest } = useAuth();
   const { bookings } = useBookings();

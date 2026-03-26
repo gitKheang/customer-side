@@ -1,282 +1,402 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Pencil, Trash2, Plus } from "lucide-react";
+import {
+  Eye,
+  Pencil,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  UtensilsCrossed,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RestaurantBottomNav from "@/components/RestaurantBottomNav";
+import {
+  useRestaurantData,
+  MANAGED_RESTAURANT_ID,
+} from "@/contexts/RestaurantDataContext";
+import type { RestaurantMenuItem } from "@/data/mockData";
 
-interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  status: "available" | "sold_out" | "time_based";
-}
+const defaultMenuImage =
+  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop";
 
-const initialMenu: MenuItem[] = [
-  {
-    id: "1",
-    name: "Fish Amok",
-    description: "Signature steamed fish curry in banana leaf with spice.",
-    price: 7.5,
-    image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=200&h=200&fit=crop",
-    status: "available",
-  },
-  {
-    id: "2",
-    name: "Lok Lak",
-    description: "Stir-fried marinated beef with Kampot pepper sauce",
-    price: 6.5,
-    image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=200&h=200&fit=crop",
-    status: "available",
-  },
-  {
-    id: "3",
-    name: "Prahok Ktiss",
-    description: "Creamy fermented fish dip with minced pork, served",
-    price: 5.0,
-    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop",
-    status: "time_based",
-  },
-  {
-    id: "4",
-    name: "Num Banh Chok",
-    description: "Traditional Khmer rice noodles with green fish curry.",
-    price: 4.5,
-    image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=200&h=200&fit=crop",
-    status: "time_based",
-  },
-  {
-    id: "5",
-    name: "Beef Stew",
-    description: "Slow-cooked Cambodian beef stew with vegetables.",
-    price: 8.0,
-    image: "https://images.unsplash.com/photo-1547592180-85f173990554?w=200&h=200&fit=crop",
-    status: "sold_out",
-  },
-];
-
-const statusLabel: Record<MenuItem["status"], string> = {
+const statusLabel: Record<
+  NonNullable<RestaurantMenuItem["status"]>,
+  string
+> = {
   available: "available",
   sold_out: "sold out",
   time_based: "time based",
 };
 
-const statusColor: Record<MenuItem["status"], string> = {
+const statusColor: Record<
+  NonNullable<RestaurantMenuItem["status"]>,
+  string
+> = {
   available: "bg-success/10 text-success",
   sold_out: "bg-destructive/10 text-destructive",
   time_based: "bg-primary/10 text-primary",
 };
 
-const RestaurantMenuPage = () => {
-  const [items, setItems] = useState<MenuItem[]>(initialMenu);
-  const [search, setSearch] = useState("");
-  const [showAdd, setShowAdd] = useState(false);
-  const [newItem, setNewItem] = useState({
-    name: "",
-    description: "",
-    price: "",
-    status: "available" as MenuItem["status"],
-  });
+interface MenuDraft {
+  name: string;
+  description: string;
+  category: string;
+  price: string;
+  image: string;
+  status: NonNullable<RestaurantMenuItem["status"]>;
+}
 
-  const filtered = items.filter(
-    (i) =>
-      i.name.toLowerCase().includes(search.toLowerCase()) ||
-      i.description.toLowerCase().includes(search.toLowerCase())
-  );
+const emptyDraft: MenuDraft = {
+  name: "",
+  description: "",
+  category: "",
+  price: "",
+  image: "",
+  status: "available",
+};
+
+const normalizePrice = (price: string) => {
+  const trimmed = price.trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("$") ? trimmed : `$${trimmed}`;
+};
+
+const RestaurantMenuPage = () => {
+  const navigate = useNavigate();
+  const { managedRestaurant, addMenuItem, updateMenuItem, removeMenuItem } =
+    useRestaurantData();
+  const [search, setSearch] = useState("");
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<MenuDraft>(emptyDraft);
+
+  const items = managedRestaurant.menu;
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return items;
+    return items.filter((item) => {
+      const description = item.description ?? "";
+      return (
+        item.name.toLowerCase().includes(query) ||
+        description.toLowerCase().includes(query) ||
+        item.category.toLowerCase().includes(query)
+      );
+    });
+  }, [items, search]);
 
   const counts = {
-    available: items.filter((i) => i.status === "available").length,
-    sold_out: items.filter((i) => i.status === "sold_out").length,
-    time_based: items.filter((i) => i.status === "time_based").length,
+    available: items.filter((item) => item.status === "available").length,
+    sold_out: items.filter((item) => item.status === "sold_out").length,
+    time_based: items.filter((item) => item.status === "time_based").length,
   };
 
-  const handleDelete = (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+  const openCreateComposer = () => {
+    setEditingItemId(null);
+    setDraft(emptyDraft);
+    setIsComposerOpen(true);
   };
 
-  const handleAdd = () => {
-    if (!newItem.name || !newItem.price) return;
-    const item: MenuItem = {
-      id: Date.now().toString(),
-      name: newItem.name,
-      description: newItem.description,
-      price: parseFloat(newItem.price),
-      image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop",
-      status: newItem.status,
+  const openEditComposer = (item: RestaurantMenuItem) => {
+    setEditingItemId(item.id ?? null);
+    setDraft({
+      name: item.name,
+      description: item.description ?? "",
+      category: item.category,
+      price: item.price,
+      image: item.image,
+      status: item.status ?? "available",
+    });
+    setIsComposerOpen(true);
+  };
+
+  const closeComposer = () => {
+    setIsComposerOpen(false);
+    setEditingItemId(null);
+    setDraft(emptyDraft);
+  };
+
+  const handleSaveItem = () => {
+    const payload = {
+      name: draft.name.trim(),
+      description: draft.description.trim(),
+      category: draft.category.trim() || "Main",
+      price: normalizePrice(draft.price),
+      image: draft.image.trim() || defaultMenuImage,
+      status: draft.status,
     };
-    setItems((prev) => [item, ...prev]);
-    setNewItem({ name: "", description: "", price: "", status: "available" });
-    setShowAdd(false);
+
+    if (!payload.name || !payload.price) return;
+
+    if (editingItemId) {
+      updateMenuItem(editingItemId, payload);
+    } else {
+      addMenuItem(payload);
+    }
+
+    closeComposer();
   };
 
   return (
-    <div className="relative flex h-full flex-col bg-background">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background">
       <div className="safe-area-top" />
 
-      <div className="flex items-center justify-between px-5 pb-3">
+      <div className="flex items-center justify-between gap-3 px-5 pb-3">
         <div>
           <h1 className="text-lg font-bold text-foreground">Menu</h1>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Manage your menu items
+            Manage what customers see on your public restaurant page
           </p>
         </div>
         <Button
           variant="cta"
           size="sm"
           className="rounded-full"
-          onClick={() => setShowAdd(!showAdd)}
+          onClick={openCreateComposer}
         >
-          {showAdd ? "Cancel" : "Add Item"}
+          <Plus className="mr-1.5 h-4 w-4" />
+          Add item
         </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-28 scrollbar-hide">
-        {/* Add Item Form */}
-        {showAdd && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="mb-4 rounded-2xl border border-border p-4"
-          >
-            <h3 className="text-sm font-semibold text-foreground">
-              New menu item
-            </h3>
-            <div className="mt-3 space-y-3">
-              <input
-                type="text"
-                placeholder="Item name"
-                value={newItem.name}
-                onChange={(e) =>
-                  setNewItem((p) => ({ ...p, name: e.target.value }))
-                }
-                className="h-11 w-full rounded-xl border border-border bg-secondary/50 px-3 text-sm outline-none focus:ring-1 focus:ring-primary/20"
-              />
-              <input
-                type="text"
-                placeholder="Description"
-                value={newItem.description}
-                onChange={(e) =>
-                  setNewItem((p) => ({ ...p, description: e.target.value }))
-                }
-                className="h-11 w-full rounded-xl border border-border bg-secondary/50 px-3 text-sm outline-none focus:ring-1 focus:ring-primary/20"
-              />
-              <div className="flex gap-3">
-                <input
-                  type="number"
-                  placeholder="Price"
-                  value={newItem.price}
-                  onChange={(e) =>
-                    setNewItem((p) => ({ ...p, price: e.target.value }))
-                  }
-                  className="h-11 flex-1 rounded-xl border border-border bg-secondary/50 px-3 text-sm outline-none focus:ring-1 focus:ring-primary/20"
-                />
-                <select
-                  value={newItem.status}
-                  onChange={(e) =>
-                    setNewItem((p) => ({
-                      ...p,
-                      status: e.target.value as MenuItem["status"],
-                    }))
-                  }
-                  className="h-11 flex-1 rounded-xl border border-border bg-secondary/50 px-3 text-sm outline-none focus:ring-1 focus:ring-primary/20"
-                >
-                  <option value="available">Available</option>
-                  <option value="sold_out">Sold Out</option>
-                  <option value="time_based">Time Based</option>
-                </select>
+        <section className="overflow-hidden rounded-[28px] border border-[#e8d39d] bg-[linear-gradient(145deg,#fff7de_0%,#f8efcb_100%)] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="inline-flex rounded-full bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a6426]">
+                Public menu sync
               </div>
-              <Button variant="cta" className="w-full" onClick={handleAdd}>
-                <Plus className="mr-1.5 h-4 w-4" />
-                Add Item
+              <h2 className="mt-3 text-xl font-bold text-[#2f2414]">
+                {managedRestaurant.name}
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-[#5f522f]">
+                Menu changes here update the customer restaurant detail page.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/70 p-3">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2.5">
+            <div className="rounded-2xl bg-white/75 px-3 py-3">
+              <p className="text-[20px] font-bold text-emerald-600">
+                {counts.available}
+              </p>
+              <p className="text-[11px] font-medium text-emerald-600">
+                Available
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/75 px-3 py-3">
+              <p className="text-[20px] font-bold text-destructive">
+                {counts.sold_out}
+              </p>
+              <p className="text-[11px] font-medium text-destructive">
+                Sold out
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/75 px-3 py-3">
+              <p className="text-[20px] font-bold text-primary">
+                {counts.time_based}
+              </p>
+              <p className="text-[11px] font-medium text-primary">
+                Time based
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl border-white/80 bg-white/70"
+              onClick={() => navigate("/restaurant-edit-listing")}
+            >
+              <UtensilsCrossed className="mr-2 h-4 w-4" />
+              Listing
+            </Button>
+            <Button
+              type="button"
+              variant="cta"
+              className="rounded-2xl"
+              onClick={() => navigate(`/restaurant/${MANAGED_RESTAURANT_ID}`)}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Preview
+            </Button>
+          </div>
+        </section>
+
+        {isComposerOpen && (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 rounded-3xl border border-border p-4"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">
+                  {editingItemId ? "Edit menu item" : "New menu item"}
+                </h3>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Keep titles, prices, and descriptions customer-ready.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                onClick={closeComposer}
+              >
+                Cancel
               </Button>
             </div>
-          </motion.div>
+
+            <div className="mt-4 space-y-3">
+              <input
+                type="text"
+                placeholder="Dish name"
+                value={draft.name}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, name: event.target.value }))
+                }
+                className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+              <textarea
+                placeholder="Short description"
+                value={draft.description}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    description: event.target.value,
+                  }))
+                }
+                className="min-h-[88px] w-full rounded-2xl border border-input bg-background px-3 py-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  placeholder="Category"
+                  value={draft.category}
+                  onChange={(event) =>
+                    setDraft((prev) => ({
+                      ...prev,
+                      category: event.target.value,
+                    }))
+                  }
+                  className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+                <input
+                  type="text"
+                  placeholder="$7.50"
+                  value={draft.price}
+                  onChange={(event) =>
+                    setDraft((prev) => ({ ...prev, price: event.target.value }))
+                  }
+                  className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+              <input
+                type="text"
+                placeholder="Image URL"
+                value={draft.image}
+                onChange={(event) =>
+                  setDraft((prev) => ({ ...prev, image: event.target.value }))
+                }
+                className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+              <select
+                value={draft.status}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    status: event.target.value as MenuDraft["status"],
+                  }))
+                }
+                className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="available">Available</option>
+                <option value="sold_out">Sold Out</option>
+                <option value="time_based">Time Based</option>
+              </select>
+
+              <Button
+                type="button"
+                variant="cta"
+                className="w-full rounded-2xl"
+                onClick={handleSaveItem}
+              >
+                {editingItemId ? "Save changes" : "Add menu item"}
+              </Button>
+            </div>
+          </motion.section>
         )}
 
-        {/* Search */}
-        <div className="relative mb-4">
+        <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search menu items..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-11 w-full rounded-2xl border border-border bg-secondary/50 pl-10 pr-4 text-sm outline-none focus:ring-1 focus:ring-primary/20"
+            onChange={(event) => setSearch(event.target.value)}
+            className="h-11 w-full rounded-2xl border border-input bg-background pl-10 pr-4 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
         </div>
 
-        {/* Status summary */}
-        <div className="mb-4 grid grid-cols-3 gap-2.5">
-          <div className="rounded-2xl bg-emerald-50 px-3 py-2.5">
-            <p className="text-[20px] font-bold text-emerald-600">
-              {counts.available}
-            </p>
-            <p className="text-[11px] font-medium text-emerald-600">
-              Available
-            </p>
-          </div>
-          <div className="rounded-2xl bg-red-50 px-3 py-2.5">
-            <p className="text-[20px] font-bold text-red-600">
-              {counts.sold_out}
-            </p>
-            <p className="text-[11px] font-medium text-red-600">Sold Out</p>
-          </div>
-          <div className="rounded-2xl bg-primary/10 px-3 py-2.5">
-            <p className="text-[20px] font-bold text-primary">
-              {counts.time_based}
-            </p>
-            <p className="text-[11px] font-medium text-primary">Time-Based</p>
-          </div>
-        </div>
-
-        {/* Menu items */}
-        <div className="space-y-3">
-          {filtered.map((item, i) => (
+        <div className="mt-4 space-y-3">
+          {filtered.map((item, index) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="rounded-2xl border border-border p-3 card-shadow"
+              transition={{ delay: index * 0.04 }}
+              className="rounded-3xl border border-border p-3"
             >
               <div className="flex gap-3">
                 <img
                   src={item.image}
                   alt={item.name}
-                  className="h-20 w-20 shrink-0 rounded-xl object-cover"
+                  className="h-20 w-20 shrink-0 rounded-2xl object-cover"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-sm font-semibold text-foreground">
-                      {item.name}
-                    </h3>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {item.name}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {item.category}
+                      </p>
+                    </div>
                     <span
-                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize ${statusColor[item.status]}`}
+                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize ${statusColor[item.status ?? "available"]}`}
                     >
-                      {statusLabel[item.status]}
+                      {statusLabel[item.status ?? "available"]}
                     </span>
                   </div>
-                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-muted-foreground">
-                    {item.description}
+                  <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-muted-foreground">
+                    {item.description || "No description added yet."}
                   </p>
-                  <div className="mt-2 flex items-center justify-between">
-                    <p className="text-sm font-bold text-destructive">
-                      ${item.price.toFixed(2)}
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <p className="text-sm font-bold text-primary">
+                      {item.price}
                     </p>
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-primary transition-transform hover:scale-110 active:scale-95"
+                        onClick={() => openEditComposer(item)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-primary transition-transform hover:scale-105 active:scale-95"
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pencil className="h-4 w-4" />
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete(item.id)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-transform hover:scale-110 active:scale-95"
+                        onClick={() => removeMenuItem(item.id ?? "")}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-transform hover:scale-105 active:scale-95"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
@@ -284,6 +404,17 @@ const RestaurantMenuPage = () => {
               </div>
             </motion.div>
           ))}
+
+          {filtered.length === 0 && (
+            <div className="rounded-3xl border border-dashed border-border px-5 py-10 text-center">
+              <p className="text-sm font-semibold text-foreground">
+                No menu items matched your search
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Adjust the search or add a new dish for customers to browse.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

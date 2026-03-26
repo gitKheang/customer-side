@@ -3,8 +3,10 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft,
   User,
+  Store,
   MapPin,
   Bell,
+  Camera,
   Globe,
   Shield,
   CircleHelp,
@@ -16,12 +18,14 @@ import RestaurantBottomNav from "@/components/RestaurantBottomNav";
 
 const settingsItems = [
   { label: "Edit Profile", icon: User, to: "/restaurant-edit-profile" },
-  { label: "Saved Addresses", icon: MapPin, to: "/restaurant-settings" },
+  { label: "Restaurant Listing", icon: Store, to: "/restaurant-edit-listing" },
+  { label: "Stories", icon: Camera, to: "/restaurant-stories" },
+  { label: "Business Addresses", icon: MapPin, to: "/restaurant-addresses" },
   { label: "Notifications", icon: Bell, to: "/restaurant-notification-settings" },
   { label: "Language", icon: Globe, to: "/restaurant-language" },
-  { label: "Privacy Policy", icon: Shield, to: "/restaurant-settings" },
-  { label: "Help & Support", icon: CircleHelp, to: "/restaurant-settings" },
-  { label: "About", icon: Info, to: "/restaurant-settings" },
+  { label: "Privacy & Security", icon: Shield, to: "/restaurant-privacy" },
+  { label: "Help & Support", icon: CircleHelp, to: "/restaurant-help" },
+  { label: "About", icon: Info, to: "/restaurant-about" },
 ];
 
 const RestaurantSettingsPage = () => {

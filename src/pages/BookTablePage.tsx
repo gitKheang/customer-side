@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { mockRestaurants } from "@/data/mockData";
 import {
   ArrowLeft,
   CalendarDays,
@@ -16,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBookings } from "@/contexts/BookingsContext";
+import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 import { goBackOr } from "@/lib/navigation";
 import { EMAIL_REGEX } from "@/lib/authValidation";
 import {
@@ -45,7 +45,9 @@ const BookTablePage = () => {
   const location = useLocation();
   const { user, isAuthenticated, isGuest } = useAuth();
   const { bookings, addBooking, updateBooking } = useBookings();
-  const restaurant = mockRestaurants.find((r) => r.id === id);
+  const { getRestaurantById } = useRestaurantData();
+  const restaurant = getRestaurantById(id || "");
+  const normalizedUserEmail = user?.email?.trim().toLowerCase() || "";
   const pageState = (location.state as BookTableLocationState | null) ?? null;
   const bookingToModify =
     pageState?.mode === "modify" && pageState.bookingId
@@ -53,7 +55,9 @@ const BookTablePage = () => {
           (booking) =>
             booking.id === pageState.bookingId &&
             booking.restaurantId === id &&
-            booking.status === "upcoming",
+            booking.status === "upcoming" &&
+            normalizedUserEmail.length > 0 &&
+            booking.bookingEmail.toLowerCase() === normalizedUserEmail,
         )
       : undefined;
   const isModifyMode = !!bookingToModify;

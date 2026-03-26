@@ -12,10 +12,19 @@ const NotificationsPage = () => {
   const {
     notifications,
     markNotificationRead,
-    markAllNotificationsRead,
-    unreadCount,
+    markNotificationsRead,
   } = useBookings();
-  const { isAuthenticated, isGuest } = useAuth();
+  const { user, isAuthenticated, isGuest } = useAuth();
+  const normalizedUserEmail = user?.email?.trim().toLowerCase() || "";
+  const customerNotifications = notifications.filter(
+    (notification) =>
+      notification.audience === "customer" &&
+      normalizedUserEmail.length > 0 &&
+      notification.recipientEmail?.toLowerCase() === normalizedUserEmail,
+  );
+  const unreadCount = customerNotifications.filter(
+    (notification) => !notification.read,
+  ).length;
 
   const typeIcon = {
     booking_confirmed: "✅",
@@ -96,7 +105,13 @@ const NotificationsPage = () => {
             variant="ghost"
             size="sm"
             className="text-xs text-primary gap-1"
-            onClick={markAllNotificationsRead}
+            onClick={() =>
+              markNotificationsRead(
+                customerNotifications
+                  .filter((notification) => !notification.read)
+                  .map((notification) => notification.id),
+              )
+            }
           >
             <CheckCheck className="h-3.5 w-3.5" />
             Mark all read
@@ -105,7 +120,7 @@ const NotificationsPage = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-28 scrollbar-hide">
-        {notifications.length === 0 ? (
+        {customerNotifications.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -119,7 +134,7 @@ const NotificationsPage = () => {
           </motion.div>
         ) : (
           <div className="space-y-2">
-            {notifications.map((n, i) => (
+            {customerNotifications.map((n, i) => (
               <motion.button
                 key={n.id}
                 initial={{ opacity: 0, y: 10 }}

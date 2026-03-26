@@ -9,11 +9,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { mockRestaurants } from "@/data/mockData";
 import BottomNav from "@/components/BottomNav";
 import RestaurantSearchBar from "@/components/RestaurantSearchBar";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useReviews } from "@/contexts/ReviewsContext";
+import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 import { goBackOr } from "@/lib/navigation";
 import { getMatchingRestaurants } from "@/lib/restaurantSearch";
 
@@ -27,6 +27,7 @@ const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toggleFavorite, isFavorite } = useFavorites();
   const { getRestaurantStats } = useReviews();
+  const { restaurants } = useRestaurantData();
   const urlQuery = searchParams.get("q") ?? "";
   const [query, setQuery] = useState(urlQuery);
 
@@ -35,8 +36,8 @@ const SearchPage = () => {
   }, [urlQuery]);
 
   const results = useMemo(
-    () => getMatchingRestaurants(mockRestaurants, query),
-    [query],
+    () => getMatchingRestaurants(restaurants, query),
+    [restaurants, query],
   );
   const trimmedQuery = query.trim();
 

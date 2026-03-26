@@ -14,33 +14,33 @@ interface ToggleItem {
 
 const initialToggles: ToggleItem[] = [
   {
-    key: "orders",
-    label: "Order Updates",
-    description: "Get notified about order status changes",
-    enabled: true,
-  },
-  {
     key: "reservations",
-    label: "Reservation Reminders",
-    description: "Reminders before your reservation",
+    label: "New Reservation Alerts",
+    description: "Get notified when customers book or cancel",
     enabled: true,
   },
   {
-    key: "promotions",
-    label: "Promotions & Offers",
-    description: "Special deals and discount codes",
-    enabled: false,
+    key: "reminders",
+    label: "Booking Reminders",
+    description: "Reminders before upcoming reservations",
+    enabled: true,
   },
   {
     key: "reviews",
-    label: "Review Requests",
-    description: "Reminders to rate your experience",
+    label: "Customer Review Alerts",
+    description: "Get notified when customers leave reviews",
+    enabled: false,
+  },
+  {
+    key: "profile",
+    label: "Profile Updates",
+    description: "Notifications about profile and menu changes",
     enabled: true,
   },
   {
     key: "news",
-    label: "News & Updates",
-    description: "App updates and new features",
+    label: "Platform News & Updates",
+    description: "App updates and new features for owners",
     enabled: false,
   },
 ];
@@ -99,13 +99,13 @@ const RestaurantNotificationSettingsPage = () => {
               <button
                 type="button"
                 onClick={() => handleToggle(item.key)}
-                className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+                className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
                   item.enabled ? "bg-primary" : "bg-secondary"
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-                    item.enabled ? "translate-x-5" : "translate-x-0.5"
+                  className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                    item.enabled ? "translate-x-[26px]" : "translate-x-[3px]"
                   }`}
                 />
               </button>

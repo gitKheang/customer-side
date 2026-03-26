@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Camera } from "lucide-react";
@@ -11,6 +11,7 @@ import RestaurantBottomNav from "@/components/RestaurantBottomNav";
 const RestaurantEditProfilePage = () => {
   const navigate = useNavigate();
   const { user, updateProfile } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     fullName: user?.name || "Phorn Sinet",
     email: user?.email || "sinet@gmail.com",
@@ -20,6 +21,18 @@ const RestaurantEditProfilePage = () => {
   const handleSave = () => {
     updateProfile({ name: form.fullName, email: form.email, phone: form.phone });
     navigate(-1);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      updateProfile({ photo: result });
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -53,10 +66,33 @@ const RestaurantEditProfilePage = () => {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-4 rounded-2xl border border-border bg-secondary/20 p-4"
+        >
+          <p className="text-sm font-semibold text-foreground">
+            This page edits your owner account
+          </p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            To change the restaurant name, cover photo, description, menu, or
+            bookable time slots that customers see, edit your public listing.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 rounded-full"
+            onClick={() => navigate("/restaurant-edit-listing")}
+          >
+            Edit restaurant listing
+          </Button>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           className="flex justify-center py-5"
         >
           <div className="relative">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/25 to-primary/5 text-3xl font-bold text-primary ring-4 ring-primary/10">
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/25 to-primary/5 text-3xl font-bold text-primary ring-4 ring-primary/10 overflow-hidden">
               {user?.photo ? (
                 <img
                   src={user.photo}
@@ -67,8 +103,16 @@ const RestaurantEditProfilePage = () => {
                 form.fullName[0]?.toUpperCase() || "U"
               )}
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
             <button
               type="button"
+              onClick={() => fileInputRef.current?.click()}
               className="absolute -bottom-1 -right-1 rounded-full bg-primary p-2.5 shadow-lg shadow-primary/30 transition-transform active:scale-90"
             >
               <Camera className="h-4 w-4 text-primary-foreground" />

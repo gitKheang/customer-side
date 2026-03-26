@@ -16,9 +16,9 @@ const SignInPage = () => {
   const canSignIn = isValidIdentifier(identifier) && !!password;
 
   const handleSocialSignIn = (provider: "google" | "apple") => {
-    const result = socialAuth(provider);
+    const result = socialAuth(provider, "customer");
     if (result.success) {
-      navigate(provider === "apple" ? "/restaurant-dashboard" : "/home");
+      navigate("/home");
     }
   };
 
@@ -44,7 +44,7 @@ const SignInPage = () => {
 
         <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
         <p className="mt-2 text-center text-sm text-muted-foreground leading-relaxed">
-          Sign in to manage your bookings{"\n"}and discover restaurants
+          Sign in to continue to your dining{"\n"}or restaurant owner account
         </p>
 
         <div className="mt-8 w-full space-y-3.5">
@@ -72,7 +72,9 @@ const SignInPage = () => {
             onClick={() => {
               const result = login(identifier, password);
               if (result.success) {
-                navigate("/restaurant-dashboard");
+                navigate(
+                  result.role === "restaurant" ? "/restaurant-dashboard" : "/home",
+                );
               }
             }}
           >

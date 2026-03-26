@@ -16,6 +16,16 @@ export interface RestaurantStory {
   durationSeconds?: number;
 }
 
+export interface RestaurantMenuItem {
+  id?: string;
+  name: string;
+  price: string;
+  category: string;
+  image: string;
+  description?: string;
+  status?: "available" | "sold_out" | "time_based";
+}
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -32,7 +42,7 @@ export interface Restaurant {
   tags: string[];
   type: "restaurant" | "pub" | "cafe" | "nightclub";
   availableSlots: string[];
-  menu: { name: string; price: string; category: string; image: string }[];
+  menu: RestaurantMenuItem[];
   stories?: RestaurantStory[];
 }
 

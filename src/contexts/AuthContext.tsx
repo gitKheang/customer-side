@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -45,6 +46,7 @@ interface AuthContextType {
   ) => { success: boolean; message: string };
   socialAuth: (
     provider: "google" | "apple",
+    role?: "customer" | "restaurant",
   ) => { success: boolean; message: string };
 }
 
@@ -189,6 +191,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email: identifierType === "email" ? normalizedIdentifier : "",
       phone: identifierType === "phone" ? normalizedIdentifier : "",
       photo: null,
+      role: "customer",
       password,
     };
     saveStoredUsers([...users, newUser]);
@@ -314,7 +317,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { success: true, message: "Password reset successfully" };
   };
 
-  const socialAuth = (provider: "google" | "apple") => {
+  const socialAuth = (
+    provider: "google" | "apple",
+    role: "customer" | "restaurant" = "customer",
+  ) => {
     const normalizedProvider = provider.toLowerCase();
     const email = `${normalizedProvider}.social@rra.app`;
     const password = `social-${normalizedProvider}-auth`;
@@ -327,10 +333,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email,
         phone: "",
         photo: null,
-        role: provider === "apple" ? "restaurant" : "customer",
+        role,
         password,
       };
       saveStoredUsers([...users, account]);
+    } else if (account.role !== role) {
+      const nextUsers = users.map((user) =>
+        user.email === email ? { ...user, role } : user,
+      );
+      account = { ...account, role };
+      saveStoredUsers(nextUsers);
     }
 
     const { password: _, ...userData } = account;

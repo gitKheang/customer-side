@@ -9,7 +9,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { mockRestaurants } from "@/data/mockData";
 import BottomNav from "@/components/BottomNav";
 import RestaurantSearchBar from "@/components/RestaurantSearchBar";
 import RestaurantStoryViewer from "@/components/RestaurantStoryViewer";
@@ -17,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useBookings } from "@/contexts/BookingsContext";
 import { useReviews } from "@/contexts/ReviewsContext";
+import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 import { useRestaurantStoryState } from "@/hooks/useRestaurantStoryState";
 import {
   formatStoryAge,
@@ -27,8 +27,9 @@ const HomePage = () => {
   const [searchParams] = useSearchParams();
   const { user, isGuest } = useAuth();
   const { toggleFavorite, isFavorite } = useFavorites();
-  const { unreadCount } = useBookings();
+  const { notifications } = useBookings();
   const { getRestaurantStats } = useReviews();
+  const { restaurants } = useRestaurantData();
   const { isRestaurantStorySeen, markRestaurantStorySeen } =
     useRestaurantStoryState();
   const isFigmaCapture =
@@ -43,8 +44,8 @@ const HomePage = () => {
   >();
   const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
   const storyGroups = useMemo(
-    () => getRestaurantStoryGroups(mockRestaurants),
-    [],
+    () => getRestaurantStoryGroups(restaurants),
+    [restaurants],
   );
 
   const hour = new Date().getHours();
@@ -59,6 +60,14 @@ const HomePage = () => {
   const heroSubtitle = isGuest
     ? "Search restaurants and discover where to eat next."
     : "Search nearby restaurants and manage your bookings.";
+  const normalizedUserEmail = user?.email?.trim().toLowerCase() || "";
+  const unreadCount = notifications.filter(
+    (notification) =>
+      notification.audience === "customer" &&
+      !notification.read &&
+      normalizedUserEmail.length > 0 &&
+      notification.recipientEmail?.toLowerCase() === normalizedUserEmail,
+  ).length;
 
   const categories = [
     { emoji: "🍽️", label: "Restaurants" },
@@ -219,7 +228,7 @@ const HomePage = () => {
           <section className="px-5 pb-8">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-base font-bold text-foreground">
-                Top restaurants in London
+                Top restaurants near you
               </h2>
               <button
                 onClick={() => navigate("/search")}
@@ -230,7 +239,7 @@ const HomePage = () => {
             </div>
 
             <div className="space-y-5">
-              {mockRestaurants.slice(0, 3).map((restaurant, index) => {
+              {restaurants.slice(0, 3).map((restaurant, index) => {
                 const stats = getRestaurantStats(restaurant);
                 return (
                   <motion.button

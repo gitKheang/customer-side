@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -9,11 +10,14 @@ import { Booking, mockBookings } from "@/data/mockData";
 
 export interface Notification {
   id: string;
+  audience: "customer" | "restaurant";
   type:
     | "booking_confirmed"
     | "booking_cancelled"
     | "booking_modified"
     | "reminder";
+  recipientEmail?: string;
+  restaurantId?: string;
   title: string;
   message: string;
   timestamp: string;
@@ -25,6 +29,7 @@ interface BookingsContextType {
   notifications: Notification[];
   addBooking: (booking: Omit<Booking, "id">) => void;
   cancelBooking: (id: string) => { success: boolean; message: string };
+  completeBooking: (id: string) => { success: boolean; message: string };
   updateBooking: (
     id: string,
     updates: Pick<
@@ -40,6 +45,7 @@ interface BookingsContextType {
   ) => { success: boolean; message: string };
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
+  markNotificationsRead: (ids: string[]) => void;
   unreadCount: number;
 }
 
@@ -107,9 +113,20 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     const newBooking: Booking = { ...booking, id };
     setBookings((prev) => [newBooking, ...prev]);
     addNotification({
+      audience: "customer",
       type: "booking_confirmed",
+      recipientEmail: booking.bookingEmail,
+      restaurantId: booking.restaurantId,
       title: "Booking Confirmed",
       message: `Reservation ${booking.bookingReference} at ${booking.restaurantName} on ${booking.date} at ${booking.time} is confirmed.`,
+    });
+    addNotification({
+      audience: "restaurant",
+      type: "booking_confirmed",
+      recipientEmail: booking.bookingEmail,
+      restaurantId: booking.restaurantId,
+      title: "New Reservation",
+      message: `${booking.bookingName} booked ${booking.date} at ${booking.time} for ${booking.guests} guests.`,
     });
   };
 
@@ -144,9 +161,20 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
       ),
     );
     addNotification({
+      audience: "customer",
       type: "booking_cancelled",
+      recipientEmail: booking.bookingEmail,
+      restaurantId: booking.restaurantId,
       title: "Booking Cancelled",
       message: `Your booking at ${booking.restaurantName} on ${booking.date} at ${booking.time} has been cancelled.`,
+    });
+    addNotification({
+      audience: "restaurant",
+      type: "booking_cancelled",
+      recipientEmail: booking.bookingEmail,
+      restaurantId: booking.restaurantId,
+      title: "Reservation Cancelled",
+      message: `${booking.bookingName} cancelled ${booking.date} at ${booking.time}.`,
     });
     return { success: true, message: "Booking cancelled successfully" };
   };
@@ -186,15 +214,47 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     );
 
     addNotification({
+      audience: "customer",
       type: "booking_modified",
+      recipientEmail: booking.bookingEmail,
+      restaurantId: booking.restaurantId,
       title: "Booking Updated",
       message: `Your reservation ${booking.bookingReference} at ${booking.restaurantName} has been updated to ${updates.date} at ${updates.time}.`,
+    });
+    addNotification({
+      audience: "restaurant",
+      type: "booking_modified",
+      recipientEmail: booking.bookingEmail,
+      restaurantId: booking.restaurantId,
+      title: "Reservation Updated",
+      message: `${booking.bookingName} updated the reservation to ${updates.date} at ${updates.time}.`,
     });
 
     return {
       success: true,
       message: "Booking updated successfully",
     };
+  };
+
+  const completeBooking = (id: string) => {
+    const booking = bookings.find((item) => item.id === id);
+    if (!booking) {
+      return { success: false, message: "Booking not found" };
+    }
+    if (booking.status !== "upcoming") {
+      return {
+        success: false,
+        message: "Only upcoming bookings can be marked complete",
+      };
+    }
+
+    setBookings((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, status: "completed" as const } : item,
+      ),
+    );
+
+    return { success: true, message: "Booking marked as completed" };
   };
 
   const markNotificationRead = (id: string) => {
@@ -207,6 +267,17 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  const markNotificationsRead = (ids: string[]) => {
+    const idSet = new Set(ids);
+    setNotifications((prev) =>
+      prev.map((notification) =>
+        idSet.has(notification.id)
+          ? { ...notification, read: true }
+          : notification,
+      ),
+    );
+  };
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
@@ -216,9 +287,11 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
         notifications,
         addBooking,
         cancelBooking,
+        completeBooking,
         updateBooking,
         markNotificationRead,
         markAllNotificationsRead,
+        markNotificationsRead,
         unreadCount,
       }}
     >

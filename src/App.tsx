@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { BookingsProvider } from "@/contexts/BookingsContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ReviewsProvider } from "@/contexts/ReviewsContext";
+import { RestaurantDataProvider } from "@/contexts/RestaurantDataContext";
 import { useAuth } from "@/contexts/AuthContext";
 import WelcomePage from "@/pages/WelcomePage";
 import SignUpPage from "@/pages/SignUpPage";
@@ -21,9 +22,15 @@ import RestaurantNotificationsPage from "@/pages/RestaurantNotificationsPage";
 import RestaurantSettingsPage from "@/pages/RestaurantSettingsPage";
 import RestaurantStoryPage from "@/pages/RestaurantStoryPage";
 import RestaurantEditProfilePage from "@/pages/RestaurantEditProfilePage";
+import RestaurantEditListingPage from "@/pages/RestaurantEditListingPage";
 import RestaurantNotificationSettingsPage from "@/pages/RestaurantNotificationSettingsPage";
 import RestaurantFavoritesPage from "@/pages/RestaurantFavoritesPage";
 import RestaurantLanguagePage from "@/pages/RestaurantLanguagePage";
+import RestaurantAddressesPage from "@/pages/RestaurantAddressesPage";
+import RestaurantReviewsPage from "@/pages/RestaurantReviewsPage";
+import RestaurantPrivacyPage from "@/pages/RestaurantPrivacyPage";
+import RestaurantHelpPage from "@/pages/RestaurantHelpPage";
+import RestaurantAboutPage from "@/pages/RestaurantAboutPage";
 import SignInPage from "@/pages/SignInPage";
 import VerifyEmailPage from "@/pages/VerifyEmailPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -51,10 +58,30 @@ const RequireSession = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
-const PublicLanding = ({ children }: { children: ReactNode }) => {
-  const { isAuthenticated, isGuest, isReady } = useAuth();
+const RequireRestaurantSession = ({ children }: { children: ReactNode }) => {
+  const { user, isAuthenticated, isReady } = useAuth();
   if (!isReady) return null;
-  if (isAuthenticated || isGuest) {
+  if (!isAuthenticated) {
+    return <Navigate to="/signin" replace />;
+  }
+  if (user?.role !== "restaurant") {
+    return <Navigate to="/home" replace />;
+  }
+  return <>{children}</>;
+};
+
+const PublicLanding = ({ children }: { children: ReactNode }) => {
+  const { user, isAuthenticated, isGuest, isReady } = useAuth();
+  if (!isReady) return null;
+  if (isAuthenticated) {
+    return (
+      <Navigate
+        to={user?.role === "restaurant" ? "/restaurant-dashboard" : "/home"}
+        replace
+      />
+    );
+  }
+  if (isGuest) {
     return <Navigate to="/home" replace />;
   }
   return <>{children}</>;
@@ -65,11 +92,12 @@ const App = () => (
     <AuthProvider>
       <BookingsProvider>
         <FavoritesProvider>
-          <ReviewsProvider>
-            <TooltipProvider>
-              <BrowserRouter>
-                <div className="h-full w-full overflow-hidden bg-background">
-                  <Routes>
+          <RestaurantDataProvider>
+            <ReviewsProvider>
+              <TooltipProvider>
+                <BrowserRouter>
+                  <div className="h-full w-full overflow-hidden bg-background">
+                    <Routes>
                     <Route
                       path="/"
                       element={
@@ -93,51 +121,147 @@ const App = () => (
                     />
                     <Route
                       path="/restaurant-dashboard"
-                      element={<RestaurantDashboardPage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantDashboardPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-menu"
-                      element={<RestaurantMenuPage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantMenuPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-tables"
-                      element={<RestaurantTablesPage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantTablesPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-bookings"
-                      element={<RestaurantBookingsPage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantBookingsPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-profile"
-                      element={<RestaurantProfilePage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantProfilePage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-notifications"
-                      element={<RestaurantNotificationsPage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantNotificationsPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-settings"
-                      element={<RestaurantSettingsPage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantSettingsPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-stories"
-                      element={<RestaurantStoryPage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantStoryPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-edit-profile"
-                      element={<RestaurantEditProfilePage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantEditProfilePage />
+                        </RequireRestaurantSession>
+                      }
+                    />
+                    <Route
+                      path="/restaurant-edit-listing"
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantEditListingPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-notification-settings"
-                      element={<RestaurantNotificationSettingsPage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantNotificationSettingsPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-favorites"
-                      element={<RestaurantFavoritesPage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantFavoritesPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route
                       path="/restaurant-language"
-                      element={<RestaurantLanguagePage />}
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantLanguagePage />
+                        </RequireRestaurantSession>
+                      }
+                    />
+                    <Route
+                      path="/restaurant-addresses"
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantAddressesPage />
+                        </RequireRestaurantSession>
+                      }
+                    />
+                    <Route
+                      path="/restaurant-reviews"
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantReviewsPage />
+                        </RequireRestaurantSession>
+                      }
+                    />
+                    <Route
+                      path="/restaurant-privacy"
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantPrivacyPage />
+                        </RequireRestaurantSession>
+                      }
+                    />
+                    <Route
+                      path="/restaurant-help"
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantHelpPage />
+                        </RequireRestaurantSession>
+                      }
+                    />
+                    <Route
+                      path="/restaurant-about"
+                      element={
+                        <RequireRestaurantSession>
+                          <RestaurantAboutPage />
+                        </RequireRestaurantSession>
+                      }
                     />
                     <Route path="/signin" element={<SignInPage />} />
                     <Route path="/verify" element={<VerifyEmailPage />} />
@@ -234,11 +358,12 @@ const App = () => (
                       }
                     />
                     <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </div>
-              </BrowserRouter>
-            </TooltipProvider>
-          </ReviewsProvider>
+                    </Routes>
+                  </div>
+                </BrowserRouter>
+              </TooltipProvider>
+            </ReviewsProvider>
+          </RestaurantDataProvider>
         </FavoritesProvider>
       </BookingsProvider>
     </AuthProvider>

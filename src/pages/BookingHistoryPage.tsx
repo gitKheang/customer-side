@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useBookings } from "@/contexts/BookingsContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockRestaurants } from "@/data/mockData";
+import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 
 const convertTo24h = (time12h: string) => {
   const match = time12h.match(/^(\d{1,2}):(\d{2})(am|pm)$/i);
@@ -28,8 +28,10 @@ type HistoryTab = "upcoming" | "past" | "cancelled";
 const BookingHistoryPage = () => {
   const navigate = useNavigate();
   const { bookings, cancelBooking } = useBookings();
-  const { isAuthenticated, isGuest } = useAuth();
+  const { user, isAuthenticated, isGuest } = useAuth();
+  const { getRestaurantById } = useRestaurantData();
   const [tab, setTab] = useState<HistoryTab>("upcoming");
+  const normalizedUserEmail = user?.email?.trim().toLowerCase() || "";
 
   const getDisplayStatus = (
     booking: (typeof bookings)[number],
@@ -46,7 +48,13 @@ const BookingHistoryPage = () => {
     return "upcoming";
   };
 
-  const filtered = bookings.filter((booking) => {
+  const customerBookings = bookings.filter(
+    (booking) =>
+      normalizedUserEmail.length > 0 &&
+      booking.bookingEmail.toLowerCase() === normalizedUserEmail,
+  );
+
+  const filtered = customerBookings.filter((booking) => {
     const status = getDisplayStatus(booking);
     return status === tab;
   });
@@ -71,7 +79,7 @@ const BookingHistoryPage = () => {
   };
 
   const handleOpenDirections = (restaurantId: string) => {
-    const restaurant = mockRestaurants.find((item) => item.id === restaurantId);
+    const restaurant = getRestaurantById(restaurantId);
 
     if (!restaurant) {
       navigate(`/restaurant/${restaurantId}`);

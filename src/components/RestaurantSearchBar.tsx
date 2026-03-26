@@ -1,7 +1,8 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { MapPin, Search } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { mockRestaurants, type Restaurant } from "@/data/mockData";
+import { type Restaurant } from "@/data/mockData";
+import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 import { cn } from "@/lib/utils";
 import {
   getRestaurantSuggestions,
@@ -37,10 +38,11 @@ const RestaurantSearchBar = ({
 }: RestaurantSearchBarProps) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const { restaurants } = useRestaurantData();
 
   const suggestions = useMemo(
-    () => getRestaurantSuggestions(mockRestaurants, query),
-    [query],
+    () => getRestaurantSuggestions(restaurants, query),
+    [restaurants, query],
   );
   const showSuggestions =
     (forceSuggestionsOpen || isFocused) && query.trim().length > 0;

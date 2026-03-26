@@ -195,13 +195,13 @@ const RestaurantApplicationPendingPage = () => {
       <div className="border-t border-[#ede4cf] bg-white px-5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3">
         <button
           type="button"
-          onClick={() => navigate("/restaurant-dashboard")}
+          onClick={() => navigate("/")}
           className="flex h-12 w-full items-center justify-center rounded-2xl bg-[#efc41a] text-[15px] font-semibold text-[#4b3900] shadow-[0_4px_16px_rgba(239,196,26,0.3)] transition-transform active:scale-[0.98]"
         >
-          Go to Dashboard
+          Return to welcome
         </button>
         <p className="mt-2.5 text-center text-[12px] text-muted-foreground">
-          Preview the restaurant dashboard.
+          Dashboard access is enabled only after approval.
         </p>
       </div>
     </div>

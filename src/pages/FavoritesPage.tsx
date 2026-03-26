@@ -3,17 +3,18 @@ import { ArrowLeft, Heart, MapPin, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
-import { mockRestaurants } from "@/data/mockData";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useReviews } from "@/contexts/ReviewsContext";
+import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 import { goBackOr } from "@/lib/navigation";
 
 const FavoritesPage = () => {
   const navigate = useNavigate();
   const { favorites, toggleFavorite } = useFavorites();
   const { getRestaurantStats } = useReviews();
+  const { restaurants } = useRestaurantData();
 
-  const favoriteRestaurants = mockRestaurants.filter((restaurant) =>
+  const favoriteRestaurants = restaurants.filter((restaurant) =>
     favorites.includes(restaurant.id),
   );
 

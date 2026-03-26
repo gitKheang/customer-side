@@ -10,11 +10,13 @@ import {
   TrendingUp,
   UtensilsCrossed,
   CalendarCheck2,
+  Store,
   Settings,
-  Video,
 } from "lucide-react";
 import RestaurantBottomNav from "@/components/RestaurantBottomNav";
 import { useBookings } from "@/contexts/BookingsContext";
+import { useRestaurantData } from "@/contexts/RestaurantDataContext";
+import { useReviews } from "@/contexts/ReviewsContext";
 const weekData = [
   { day: "Mon", value: 60 },
   { day: "Tue", value: 75 },
@@ -27,13 +29,30 @@ const weekData = [
 
 const RestaurantDashboardPage = () => {
   const navigate = useNavigate();
-  const { unreadCount } = useBookings();
+  const { bookings, notifications } = useBookings();
+  const { managedRestaurant } = useRestaurantData();
+  const { getRestaurantStats } = useReviews();
+  const ratingStats = getRestaurantStats(managedRestaurant);
   const [stats] = useState({
     revenue: 59.0,
-    activeOrders: 4,
-    pendingBookings: 2,
-    rating: 4.8,
   });
+  const ownerNotifications = notifications.filter(
+    (notification) =>
+      notification.audience === "restaurant" &&
+      notification.restaurantId === managedRestaurant.id,
+  );
+  const unreadCount = ownerNotifications.filter(
+    (notification) => !notification.read,
+  ).length;
+  const ownerBookings = bookings.filter(
+    (booking) => booking.restaurantId === managedRestaurant.id,
+  );
+  const pendingBookings = ownerBookings.filter(
+    (booking) => booking.status === "upcoming",
+  ).length;
+  const availableMenuItems = managedRestaurant.menu.filter(
+    (item) => item.status !== "sold_out",
+  ).length;
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background">
@@ -70,10 +89,10 @@ const RestaurantDashboardPage = () => {
 
             <div className="mt-4">
               <h1 className="max-w-[260px] text-[26px] font-bold leading-tight text-[#2f2414]">
-                Malis Restaurant
+                {managedRestaurant.name}
               </h1>
               <p className="mt-1.5 text-[14px] leading-6 text-[#5f522f]">
-                No. 136, Street 41, BKK1, Phnom Penh
+                {managedRestaurant.address}
               </p>
             </div>
           </div>
@@ -93,22 +112,22 @@ const RestaurantDashboardPage = () => {
                   iconColor: "text-emerald-600",
                 },
                 {
-                  label: "Active Orders",
-                  value: stats.activeOrders,
+                  label: "Available Dishes",
+                  value: availableMenuItems,
                   Icon: Package,
                   iconBg: "bg-blue-50",
                   iconColor: "text-blue-600",
                 },
                 {
                   label: "Pending Bookings",
-                  value: stats.pendingBookings,
+                  value: pendingBookings,
                   Icon: CalendarDays,
                   iconBg: "bg-orange-50",
                   iconColor: "text-orange-600",
                 },
                 {
                   label: "Rating",
-                  value: stats.rating,
+                  value: ratingStats.averageRating.toFixed(1),
                   Icon: Star,
                   iconBg: "bg-purple-50",
                   iconColor: "text-purple-600",
@@ -184,8 +203,8 @@ const RestaurantDashboardPage = () => {
                 {[
                   { label: "Manage Menu", Icon: UtensilsCrossed, to: "/restaurant-menu" },
                   { label: "Reservation", Icon: CalendarCheck2, to: "/restaurant-bookings" },
+                  { label: "Public Listing", Icon: Store, to: "/restaurant-edit-listing" },
                   { label: "Settings", Icon: Settings, to: "/restaurant-settings" },
-                  { label: "Stories", Icon: Video, to: "/restaurant-stories" },
                 ].map(({ label, Icon, to }, i) => (
                   <motion.button
                     key={label}

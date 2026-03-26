@@ -16,7 +16,7 @@ const CustomerSignUpPage = () => {
   const canContinue = isValidIdentifier(identifier) && password.length >= 6;
 
   const handleSocialSignUp = (provider: "google" | "apple") => {
-    const result = socialAuth(provider);
+    const result = socialAuth(provider, "customer");
     if (result.success) {
       navigate("/home");
     }
