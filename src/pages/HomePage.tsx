@@ -80,9 +80,9 @@ const HomePage = () => {
 
           <div className="relative">
             <div className="flex items-center justify-between gap-4">
-              <div className="rounded-full border border-white/25 bg-white/16 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5d4d1f] backdrop-blur-sm">
+              <p className="text-[13px] font-medium text-[#5d4d1f]">
                 {isGuest ? "Restaurant Discovery" : greeting}
-              </div>
+              </p>
 
               <button
                 onClick={() => navigate("/notifications")}
