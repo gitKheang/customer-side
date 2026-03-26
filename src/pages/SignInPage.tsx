@@ -20,7 +20,7 @@ const SignInPage = () => {
     const result = socialAuth(provider);
     if (result.success) {
       toast.success(result.message);
-      navigate("/home");
+      navigate(provider === "apple" ? "/restaurant-dashboard" : "/home");
       return;
     }
     toast.error("Unable to continue with social sign in");
@@ -76,7 +76,7 @@ const SignInPage = () => {
             onClick={() => {
               const result = login(identifier, password);
               if (result.success) {
-                navigate(result.role === "restaurant" ? "/restaurant-dashboard" : "/home");
+                navigate("/restaurant-dashboard");
               } else {
                 toast.error(result.message);
               }

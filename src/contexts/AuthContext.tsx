@@ -327,6 +327,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email,
         phone: "",
         photo: null,
+        role: provider === "apple" ? "restaurant" : "customer",
         password,
       };
       saveStoredUsers([...users, account]);
