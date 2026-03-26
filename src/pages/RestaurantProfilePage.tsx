@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Camera,
 } from "lucide-react";
-import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import RestaurantBottomNav from "@/components/RestaurantBottomNav";
 
@@ -110,7 +109,6 @@ const RestaurantProfilePage = () => {
             type="button"
             onClick={() => {
               logout();
-              toast.success("Logged out");
               navigate("/");
             }}
             className="flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/15 py-3.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/5 active:bg-destructive/10"

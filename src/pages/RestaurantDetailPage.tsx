@@ -24,7 +24,6 @@ import {
   getRestaurantStoryGroups,
   hasRestaurantStories,
 } from "@/lib/restaurantStories";
-import { toast } from "sonner";
 import { goBackOr } from "@/lib/navigation";
 import mapPreview from "@/assets/map/Screenshot 2026-03-08 at 12.04.44 in the afternoon.png";
 import {
@@ -122,22 +121,12 @@ const RestaurantDetailPage = () => {
 
   const handleOpenReviewForm = () => {
     if (!isSignedInUser) {
-      toast.error("Please sign in to write a review", {
-        action: {
-          label: "Sign In",
-          onClick: () => navigate("/signin"),
-        },
-      });
+      navigate("/signin");
       return;
     }
 
     if (!hasCompletedVisit) {
-      toast.error("You can review after completing a reservation", {
-        action: {
-          label: "My Bookings",
-          onClick: () => navigate("/history"),
-        },
-      });
+      navigate("/history");
       return;
     }
 
@@ -150,15 +139,8 @@ const RestaurantDetailPage = () => {
   };
 
   const handleSubmitReview = () => {
-    if (!isSignedInUser || !user) {
-      toast.error("Please sign in to submit a review");
-      return;
-    }
-
-    if (!hasCompletedVisit) {
-      toast.error("Complete a reservation before submitting a review");
-      return;
-    }
+    if (!isSignedInUser || !user) return;
+    if (!hasCompletedVisit) return;
 
     const result = submitReview({
       restaurantId: restaurant.id,
@@ -168,12 +150,8 @@ const RestaurantDetailPage = () => {
       authorEmail: user.email,
     });
 
-    if (!result.success) {
-      toast.error(result.message);
-      return;
-    }
+    if (!result.success) return;
 
-    toast.success(result.message);
     setShowReviewForm(false);
   };
 
@@ -595,12 +573,7 @@ const RestaurantDetailPage = () => {
               className="flex-1"
               onClick={() => {
                 if (isGuest && !isAuthenticated) {
-                  toast.error("Please sign in to book a table", {
-                    action: {
-                      label: "Sign In",
-                      onClick: () => navigate("/signin"),
-                    },
-                  });
+                  navigate("/signin");
                   return;
                 }
                 navigate(`/book/${restaurant.id}`);

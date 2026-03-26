@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, KeyRound } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
 import { goBackOr } from "@/lib/navigation";
 import { isValidIdentifier } from "@/lib/authValidation";
 
@@ -18,28 +17,16 @@ const ResetPasswordPage = () => {
   const [step, setStep] = useState<"email" | "reset">("email");
 
   const handleVerifyEmail = () => {
-    if (!isValidIdentifier(identifier)) {
-      toast.error("Please enter a valid email or phone number");
-      return;
-    }
+    if (!isValidIdentifier(identifier)) return;
     setStep("reset");
   };
 
   const handleReset = () => {
-    if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
+    if (newPassword.length < 6) return;
+    if (newPassword !== confirmPassword) return;
     const result = resetPassword(identifier, newPassword);
     if (result.success) {
-      toast.success(result.message);
       navigate("/signin");
-    } else {
-      toast.error(result.message);
     }
   };
 

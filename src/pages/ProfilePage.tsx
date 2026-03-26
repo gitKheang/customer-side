@@ -16,7 +16,6 @@ import {
   Heart,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
 const ProfilePage = () => {
@@ -90,21 +89,16 @@ const ProfilePage = () => {
   const handleSave = () => {
     setEditing(false);
     updateProfile({ name, email, phone });
-    toast.success("Profile updated!");
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
-      return;
-    }
+    if (!file.type.startsWith("image/")) return;
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
       updateProfile({ photo: result });
-      toast.success("Profile photo updated!");
     };
     reader.readAsDataURL(file);
   };
@@ -251,7 +245,6 @@ const ProfilePage = () => {
             transition={{ delay: 0.3 }}
             onClick={() => {
               logout();
-              toast.success("Logged out");
               navigate("/");
             }}
             className="flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/15 py-3.5 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors active:bg-destructive/10"

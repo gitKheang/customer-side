@@ -1,5 +1,3 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -69,8 +67,6 @@ const App = () => (
         <FavoritesProvider>
           <ReviewsProvider>
             <TooltipProvider>
-              <Toaster />
-              <Sonner />
               <BrowserRouter>
                 <div className="h-full w-full overflow-hidden bg-background">
                   <Routes>

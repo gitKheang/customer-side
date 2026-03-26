@@ -14,7 +14,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBookings } from "@/contexts/BookingsContext";
 import { goBackOr } from "@/lib/navigation";
@@ -155,20 +154,11 @@ const BookTablePage = () => {
   const hasAvailabilityForSelection = bookableSlots.length > 0;
 
   const handleBook = () => {
-    if (!selectedTime || !bookingName.trim() || !bookingEmail.trim()) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-    if (!EMAIL_REGEX.test(bookingEmail.trim())) {
-      toast.error("Please enter a valid email");
-      return;
-    }
+    if (!selectedTime || !bookingName.trim() || !bookingEmail.trim()) return;
+    if (!EMAIL_REGEX.test(bookingEmail.trim())) return;
 
     const table = getSlotTable(selectedTime);
-    if (!table) {
-      toast.error("No table available for this slot. Please choose another time.");
-      return;
-    }
+    if (!table) return;
 
     const bookingReference =
       bookingToModify?.bookingReference ?? generateBookingReference();
@@ -184,12 +174,7 @@ const BookTablePage = () => {
         bookingEmail: bookingEmail.trim(),
       });
 
-      if (!result.success) {
-        toast.error(result.message);
-        return;
-      }
-
-      toast.success(result.message);
+      if (!result.success) return;
     } else {
       addBooking({
         bookingReference,

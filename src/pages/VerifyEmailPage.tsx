@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { goBackOr } from "@/lib/navigation";
-import { toast } from "sonner";
 
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
@@ -88,7 +87,6 @@ const VerifyEmailPage = () => {
           onClick={() => {
             setOtp(["", "", "", ""]);
             refs[0].current?.focus();
-            toast.success("A new code has been sent");
           }}
         >
           Resend code

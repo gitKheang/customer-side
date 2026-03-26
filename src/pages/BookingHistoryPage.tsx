@@ -4,7 +4,6 @@ import BottomNav from "@/components/BottomNav";
 import { Clock, Users, CalendarDays, Navigation, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 import { useBookings } from "@/contexts/BookingsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { mockRestaurants } from "@/data/mockData";
@@ -58,12 +57,7 @@ const BookingHistoryPage = () => {
     );
     if (!shouldCancel) return;
 
-    const result = cancelBooking(id);
-    if (result.success) {
-      toast.success(result.message);
-    } else {
-      toast.error(result.message);
-    }
+    cancelBooking(id);
   };
 
   const handleModify = (id: string, restaurantId: string) => {
@@ -80,7 +74,6 @@ const BookingHistoryPage = () => {
     const restaurant = mockRestaurants.find((item) => item.id === restaurantId);
 
     if (!restaurant) {
-      toast.error("Restaurant details not found");
       navigate(`/restaurant/${restaurantId}`);
       return;
     }

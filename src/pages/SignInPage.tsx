@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
 import { goBackOr } from "@/lib/navigation";
 import { isValidIdentifier } from "@/lib/authValidation";
 
@@ -19,11 +18,8 @@ const SignInPage = () => {
   const handleSocialSignIn = (provider: "google" | "apple") => {
     const result = socialAuth(provider);
     if (result.success) {
-      toast.success(result.message);
       navigate(provider === "apple" ? "/restaurant-dashboard" : "/home");
-      return;
     }
-    toast.error("Unable to continue with social sign in");
   };
 
   return (
@@ -77,8 +73,6 @@ const SignInPage = () => {
               const result = login(identifier, password);
               if (result.success) {
                 navigate("/restaurant-dashboard");
-              } else {
-                toast.error(result.message);
               }
             }}
           >

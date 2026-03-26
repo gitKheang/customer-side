@@ -18,7 +18,6 @@ import {
   ImageIcon,
   Upload,
 } from "lucide-react";
-import { toast } from "sonner";
 import { goBackOr } from "@/lib/navigation";
 
 type StepKey = "account" | "identity" | "restaurant" | "review";
@@ -350,11 +349,9 @@ const RestaurantAccessPage = () => {
         !form.confirmRepresentation ||
         !form.confirmManualReview
       ) {
-        toast.error("Please complete all review confirmations before submitting.");
         return;
       }
 
-      toast.success("Restaurant application submitted for review.");
       navigate("/restaurant-application-pending", {
         replace: true,
         state: {

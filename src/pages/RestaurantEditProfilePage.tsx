@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { goBackOr } from "@/lib/navigation";
 import RestaurantBottomNav from "@/components/RestaurantBottomNav";
@@ -20,7 +19,6 @@ const RestaurantEditProfilePage = () => {
 
   const handleSave = () => {
     updateProfile({ name: form.fullName, email: form.email, phone: form.phone });
-    toast.success("Profile updated!");
     navigate(-1);
   };
 
