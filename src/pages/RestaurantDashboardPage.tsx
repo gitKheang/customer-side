@@ -110,29 +110,29 @@ const RestaurantDashboardPage = () => {
                   label: "Today's Revenue",
                   value: `$${stats.revenue.toFixed(2)}`,
                   Icon: DollarSign,
-                  iconBg: "bg-emerald-50",
-                  iconColor: "text-emerald-600",
+                  iconBgStyle: { backgroundColor: "hsl(80 45% 90%)" },
+                  iconColorStyle: { color: "hsl(80 50% 35%)" },
                 },
                 {
                   label: "Available Dishes",
                   value: availableMenuItems,
                   Icon: Package,
-                  iconBg: "bg-blue-50",
-                  iconColor: "text-blue-600",
+                  iconBgStyle: { backgroundColor: "hsl(47 80% 90%)" },
+                  iconColorStyle: { color: "hsl(47 80% 42%)" },
                 },
                 {
                   label: "Pending Bookings",
                   value: pendingBookings,
                   Icon: CalendarDays,
-                  iconBg: "bg-orange-50",
-                  iconColor: "text-orange-600",
+                  iconBgStyle: { backgroundColor: "hsl(20 70% 92%)" },
+                  iconColorStyle: { color: "hsl(20 65% 48%)" },
                 },
                 {
                   label: "Rating",
                   value: ratingStats.averageRating.toFixed(1),
                   Icon: Star,
-                  iconBg: "bg-purple-50",
-                  iconColor: "text-purple-600",
+                  iconBgStyle: { backgroundColor: "hsl(38 80% 88%)" },
+                  iconColorStyle: { color: "hsl(38 85% 45%)" },
                 },
               ].map((card, i) => (
                 <motion.div
@@ -142,8 +142,8 @@ const RestaurantDashboardPage = () => {
                   transition={{ delay: 0.05 + i * 0.05 }}
                   className="rounded-2xl border border-border p-3.5"
                 >
-                  <div className={`inline-flex rounded-lg p-2 ${card.iconBg}`}>
-                    <card.Icon className={`h-4 w-4 ${card.iconColor}`} strokeWidth={2.2} />
+                  <div className="inline-flex rounded-lg p-2" style={card.iconBgStyle}>
+                    <card.Icon className="h-4 w-4" style={card.iconColorStyle} strokeWidth={2.2} />
                   </div>
                   <p className="mt-2.5 text-[20px] font-bold text-foreground">
                     {card.value}

@@ -4,23 +4,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Camera,
-  Eye,
   ImagePlus,
   Pencil,
   Plus,
   Search,
-  Sparkles,
   Trash2,
   Upload,
-  UtensilsCrossed,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RestaurantBottomNav from "@/components/RestaurantBottomNav";
-import {
-  useRestaurantData,
-  MANAGED_RESTAURANT_ID,
-} from "@/contexts/RestaurantDataContext";
+import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 import type { RestaurantMenuItem } from "@/data/mockData";
 
 const defaultMenuImage =
@@ -39,9 +33,9 @@ const statusColor: Record<
   NonNullable<RestaurantMenuItem["status"]>,
   string
 > = {
-  available: "bg-success/10 text-success",
-  sold_out: "bg-destructive/10 text-destructive",
-  time_based: "bg-primary/10 text-primary",
+  available: "border border-primary/30 text-primary",
+  sold_out: "border border-primary/30 text-primary",
+  time_based: "border border-primary/30 text-primary",
 };
 
 const statusOptions: {
@@ -224,69 +218,43 @@ const RestaurantMenuPage = () => {
       <div className="flex-1 overflow-y-auto px-5 pb-28 scrollbar-hide">
         {/* Summary card */}
         <section className="overflow-hidden rounded-[28px] border border-[#e8d39d] bg-[linear-gradient(145deg,#fff7de_0%,#f8efcb_100%)] p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="inline-flex rounded-full bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a6426]">
-                Public menu sync
-              </div>
-              <h2 className="mt-3 text-xl font-bold text-[#2f2414]">
-                {managedRestaurant.name}
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-[#5f522f]">
-                Menu changes here update the customer restaurant detail page.
-              </p>
+          <div>
+            <div className="inline-flex rounded-full bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7a6426]">
+              Public menu sync
             </div>
-            <div className="rounded-2xl bg-white/70 p-3">
-              <Sparkles className="h-5 w-5 text-primary" />
-            </div>
+            <h2 className="mt-3 text-xl font-bold text-[#2f2414]">
+              {managedRestaurant.name}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-[#5f522f]">
+              Menu changes here update the customer restaurant detail page.
+            </p>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2.5">
-            <div className="rounded-2xl bg-white/75 px-3 py-3">
-              <p className="text-[20px] font-bold text-emerald-600">
+            <div className="rounded-2xl px-3 py-3" style={{ border: "1.5px solid hsl(47 70% 72%)" }}>
+              <p className="text-[20px] font-bold" style={{ color: "hsl(47 80% 38%)" }}>
                 {counts.available}
               </p>
-              <p className="text-[11px] font-medium text-emerald-600">
+              <p className="text-[11px] font-medium" style={{ color: "hsl(47 75% 42%)" }}>
                 Available
               </p>
             </div>
-            <div className="rounded-2xl bg-white/75 px-3 py-3">
-              <p className="text-[20px] font-bold text-destructive">
+            <div className="rounded-2xl px-3 py-3" style={{ border: "1.5px solid hsl(47 70% 72%)" }}>
+              <p className="text-[20px] font-bold" style={{ color: "hsl(47 80% 38%)" }}>
                 {counts.sold_out}
               </p>
-              <p className="text-[11px] font-medium text-destructive">
+              <p className="text-[11px] font-medium" style={{ color: "hsl(47 75% 42%)" }}>
                 Sold out
               </p>
             </div>
-            <div className="rounded-2xl bg-white/75 px-3 py-3">
-              <p className="text-[20px] font-bold text-primary">
+            <div className="rounded-2xl px-3 py-3" style={{ border: "1.5px solid hsl(47 70% 72%)" }}>
+              <p className="text-[20px] font-bold" style={{ color: "hsl(47 80% 38%)" }}>
                 {counts.time_based}
               </p>
-              <p className="text-[11px] font-medium text-primary">
+              <p className="text-[11px] font-medium" style={{ color: "hsl(47 75% 42%)" }}>
                 Time based
               </p>
             </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-2xl border-white/80 bg-white/70"
-              onClick={() => navigate("/restaurant-edit-listing")}
-            >
-              <UtensilsCrossed className="mr-2 h-4 w-4" />
-              Listing
-            </Button>
-            <Button
-              type="button"
-              variant="cta"
-              className="rounded-2xl"
-              onClick={() => navigate(`/restaurant/${MANAGED_RESTAURANT_ID}`)}
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              Preview
-            </Button>
           </div>
         </section>
 
@@ -345,14 +313,14 @@ const RestaurantMenuPage = () => {
                       <button
                         type="button"
                         onClick={() => openEditComposer(item)}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-primary transition-transform hover:scale-105 active:scale-95"
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/30 text-primary transition-transform hover:scale-105 active:scale-95"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
                         type="button"
                         onClick={() => removeMenuItem(item.id ?? "")}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-transform hover:scale-105 active:scale-95"
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/30 text-primary transition-transform hover:scale-105 active:scale-95"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

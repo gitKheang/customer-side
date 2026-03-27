@@ -82,9 +82,24 @@ const normalizeStoredBookings = (bookings: StoredBooking[]): Booking[] =>
       : booking,
   );
 
+/**
+ * Merge stored bookings with mockBookings so that any newly-added mock
+ * entries (e.g. owner-restaurant sample data) appear even when the user
+ * already has cached bookings in localStorage.
+ */
+const mergeWithMockBookings = (stored: StoredBooking[]): StoredBooking[] => {
+  const existingIds = new Set(stored.map((b) => b.id));
+  const missing = mockBookings.filter((b) => !existingIds.has(b.id));
+  return missing.length > 0 ? [...stored, ...missing] : stored;
+};
+
 export const BookingsProvider = ({ children }: { children: ReactNode }) => {
   const [bookings, setBookings] = useState<Booking[]>(() =>
-    normalizeStoredBookings(getStored<StoredBooking[]>(BOOKINGS_KEY, mockBookings)),
+    normalizeStoredBookings(
+      mergeWithMockBookings(
+        getStored<StoredBooking[]>(BOOKINGS_KEY, mockBookings),
+      ),
+    ),
   );
   const [notifications, setNotifications] = useState<Notification[]>(() =>
     getStored(NOTIFICATIONS_KEY, []),
