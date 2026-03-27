@@ -1,14 +1,19 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
+  ArrowLeft,
+  Camera,
   Eye,
+  ImagePlus,
   Pencil,
   Plus,
   Search,
   Sparkles,
   Trash2,
+  Upload,
   UtensilsCrossed,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RestaurantBottomNav from "@/components/RestaurantBottomNav";
@@ -25,9 +30,9 @@ const statusLabel: Record<
   NonNullable<RestaurantMenuItem["status"]>,
   string
 > = {
-  available: "available",
-  sold_out: "sold out",
-  time_based: "time based",
+  available: "Available",
+  sold_out: "Sold out",
+  time_based: "Time based",
 };
 
 const statusColor: Record<
@@ -38,6 +43,32 @@ const statusColor: Record<
   sold_out: "bg-destructive/10 text-destructive",
   time_based: "bg-primary/10 text-primary",
 };
+
+const statusOptions: {
+  value: NonNullable<RestaurantMenuItem["status"]>;
+  label: string;
+  activeBg: string;
+  activeText: string;
+}[] = [
+  {
+    value: "available",
+    label: "Available",
+    activeBg: "bg-success text-white",
+    activeText: "text-success",
+  },
+  {
+    value: "sold_out",
+    label: "Sold Out",
+    activeBg: "bg-destructive text-white",
+    activeText: "text-destructive",
+  },
+  {
+    value: "time_based",
+    label: "Time Based",
+    activeBg: "bg-primary text-white",
+    activeText: "text-primary",
+  },
+];
 
 interface MenuDraft {
   name: string;
@@ -65,6 +96,7 @@ const normalizePrice = (price: string) => {
 
 const RestaurantMenuPage = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { managedRestaurant, addMenuItem, updateMenuItem, removeMenuItem } =
     useRestaurantData();
   const [search, setSearch] = useState("");
@@ -96,6 +128,7 @@ const RestaurantMenuPage = () => {
   const openCreateComposer = () => {
     setEditingItemId(null);
     setDraft(emptyDraft);
+    setMenuError("");
     setIsComposerOpen(true);
   };
 
@@ -109,6 +142,7 @@ const RestaurantMenuPage = () => {
       image: item.image,
       status: item.status ?? "available",
     });
+    setMenuError("");
     setIsComposerOpen(true);
   };
 
@@ -117,6 +151,21 @@ const RestaurantMenuPage = () => {
     setEditingItemId(null);
     setDraft(emptyDraft);
     setMenuError("");
+  };
+
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setDraft((prev) => ({ ...prev, image: reader.result as string }));
+      }
+    };
+    reader.readAsDataURL(file);
+    // Reset so same file can be re-selected
+    event.target.value = "";
   };
 
   const handleSaveItem = () => {
@@ -148,6 +197,8 @@ const RestaurantMenuPage = () => {
     closeComposer();
   };
 
+  const previewImage = draft.image || defaultMenuImage;
+
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background">
       <div className="safe-area-top" />
@@ -171,6 +222,7 @@ const RestaurantMenuPage = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-28 scrollbar-hide">
+        {/* Summary card */}
         <section className="overflow-hidden rounded-[28px] border border-[#e8d39d] bg-[linear-gradient(145deg,#fff7de_0%,#f8efcb_100%)] p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -238,115 +290,7 @@ const RestaurantMenuPage = () => {
           </div>
         </section>
 
-        {isComposerOpen && (
-          <motion.section
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 rounded-3xl border border-border p-4"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">
-                  {editingItemId ? "Edit menu item" : "New menu item"}
-                </h3>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Keep titles, prices, and descriptions customer-ready.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-xs"
-                onClick={closeComposer}
-              >
-                Cancel
-              </Button>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <input
-                type="text"
-                placeholder="Dish name"
-                value={draft.name}
-                onChange={(event) =>
-                  setDraft((prev) => ({ ...prev, name: event.target.value }))
-                }
-                className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-              <textarea
-                placeholder="Short description"
-                value={draft.description}
-                onChange={(event) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    description: event.target.value,
-                  }))
-                }
-                className="min-h-[88px] w-full rounded-2xl border border-input bg-background px-3 py-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="Category"
-                  value={draft.category}
-                  onChange={(event) =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      category: event.target.value,
-                    }))
-                  }
-                  className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-                <input
-                  type="text"
-                  placeholder="$7.50"
-                  value={draft.price}
-                  onChange={(event) =>
-                    setDraft((prev) => ({ ...prev, price: event.target.value }))
-                  }
-                  className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </div>
-              <input
-                type="text"
-                placeholder="Image URL"
-                value={draft.image}
-                onChange={(event) =>
-                  setDraft((prev) => ({ ...prev, image: event.target.value }))
-                }
-                className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-              <select
-                value={draft.status}
-                onChange={(event) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    status: event.target.value as MenuDraft["status"],
-                  }))
-                }
-                className="h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="available">Available</option>
-                <option value="sold_out">Sold Out</option>
-                <option value="time_based">Time Based</option>
-              </select>
-
-              {menuError && (
-                <p className="text-xs font-medium text-destructive">{menuError}</p>
-              )}
-              <Button
-                type="button"
-                variant="cta"
-                className="w-full rounded-2xl"
-                onClick={handleSaveItem}
-              >
-                {editingItemId ? "Save changes" : "Add menu item"}
-              </Button>
-            </div>
-          </motion.section>
-        )}
-
+        {/* Search */}
         <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -358,6 +302,7 @@ const RestaurantMenuPage = () => {
           />
         </div>
 
+        {/* Menu items list */}
         <div className="mt-4 space-y-3">
           {filtered.map((item, index) => (
             <motion.div
@@ -431,7 +376,245 @@ const RestaurantMenuPage = () => {
         </div>
       </div>
 
-      <RestaurantBottomNav />
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageUpload}
+      />
+
+      {/* Full-screen composer overlay */}
+      <AnimatePresence>
+        {isComposerOpen && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            className="absolute inset-0 z-50 flex flex-col bg-background"
+          >
+            <div className="safe-area-top" />
+
+            {/* Header */}
+            <div className="flex items-center gap-3 px-5 pb-3">
+              <button
+                type="button"
+                onClick={closeComposer}
+                className="rounded-full p-2 transition-colors hover:bg-secondary active:scale-90"
+              >
+                <ArrowLeft className="h-5 w-5 text-foreground" />
+              </button>
+              <div className="flex-1">
+                <h1 className="text-lg font-bold text-foreground">
+                  {editingItemId ? "Edit Dish" : "Add New Dish"}
+                </h1>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  {editingItemId
+                    ? "Update this dish on your public menu"
+                    : "This dish will appear on your customer-facing menu"}
+                </p>
+              </div>
+            </div>
+
+            {/* Scrollable form */}
+            <div className="flex-1 overflow-y-auto px-5 pb-8 scrollbar-hide">
+              {/* Image upload area */}
+              {draft.image ? (
+                /* Has image — show preview with overlay actions */
+                <div className="relative overflow-hidden rounded-3xl border border-border">
+                  <div className="relative h-52">
+                    <img
+                      src={draft.image}
+                      alt="Food preview"
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-transparent to-transparent" />
+
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-white/90 px-4 py-3 text-sm font-semibold text-foreground backdrop-blur-sm transition-all active:scale-[0.97]"
+                        >
+                          <Upload className="h-4 w-4 text-primary" />
+                          Change Photo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDraft((prev) => ({ ...prev, image: "" }))
+                          }
+                          className="flex items-center justify-center rounded-2xl bg-white/90 px-4 py-3 backdrop-blur-sm transition-all active:scale-[0.97]"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* No image — clean empty state, no background image */
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex h-52 w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed border-border bg-secondary/30 transition-colors hover:bg-secondary/50 active:bg-secondary/60"
+                >
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-background shadow-sm">
+                    <Camera className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-foreground">
+                    Add a photo of this dish
+                  </p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Tap to upload from your device
+                  </p>
+                  <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
+                    <ImagePlus className="h-3.5 w-3.5" />
+                    Choose Photo
+                  </span>
+                </button>
+              )}
+
+              {/* Form fields */}
+              <div className="mt-5 space-y-4">
+                {/* Dish name */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                    Dish Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Fish Amok"
+                    value={draft.name}
+                    onChange={(event) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        name: event.target.value,
+                      }))
+                    }
+                    className="h-12 w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none transition-shadow focus:ring-2 focus:ring-primary/15"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                    Description
+                  </label>
+                  <textarea
+                    placeholder="Briefly describe the dish, ingredients, or style"
+                    value={draft.description}
+                    onChange={(event) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        description: event.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="w-full resize-none rounded-2xl border border-input bg-background px-4 py-3 text-sm outline-none transition-shadow focus:ring-2 focus:ring-primary/15"
+                  />
+                </div>
+
+                {/* Category + Price row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                      Category
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Main, Starter"
+                      value={draft.category}
+                      onChange={(event) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          category: event.target.value,
+                        }))
+                      }
+                      className="h-12 w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none transition-shadow focus:ring-2 focus:ring-primary/15"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-foreground">
+                      Price
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="$7.50"
+                      value={draft.price}
+                      onChange={(event) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          price: event.target.value,
+                        }))
+                      }
+                      className="h-12 w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none transition-shadow focus:ring-2 focus:ring-primary/15"
+                    />
+                  </div>
+                </div>
+
+                {/* Status pills */}
+                <div>
+                  <label className="mb-2 block text-xs font-semibold text-foreground">
+                    Availability
+                  </label>
+                  <div className="flex gap-2">
+                    {statusOptions.map((opt) => {
+                      const isActive = draft.status === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() =>
+                            setDraft((prev) => ({
+                              ...prev,
+                              status: opt.value,
+                            }))
+                          }
+                          className={`flex-1 rounded-2xl border py-3 text-xs font-semibold transition-all active:scale-[0.97] ${
+                            isActive
+                              ? `${opt.activeBg} border-transparent shadow-sm`
+                              : "border-border bg-background text-muted-foreground hover:bg-secondary/50"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Error */}
+                {menuError && (
+                  <div className="rounded-2xl bg-destructive/5 px-4 py-3">
+                    <p className="text-xs font-medium text-destructive">
+                      {menuError}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Sticky bottom action */}
+            <div className="border-t border-border bg-background px-5 pb-8 pt-4">
+              <Button
+                type="button"
+                variant="cta"
+                size="lg"
+                className="w-full rounded-2xl"
+                onClick={handleSaveItem}
+              >
+                {editingItemId ? "Save Changes" : "Add to Menu"}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {!isComposerOpen && <RestaurantBottomNav />}
     </div>
   );
 };
