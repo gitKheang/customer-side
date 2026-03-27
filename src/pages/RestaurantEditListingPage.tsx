@@ -26,14 +26,30 @@ const parseCommaSeparated = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-const toSlotLabel = (value: string) => {
-  const [rawHours, minutes] = value.split(":");
-  const hours = Number(rawHours);
-  if (Number.isNaN(hours) || !minutes) return value;
+const toSlotLabel = (value: string): string => {
+  const trimmed = value.trim().toLowerCase();
 
-  const period = hours >= 12 ? "pm" : "am";
-  const normalizedHours = hours % 12 || 12;
-  return `${normalizedHours}:${minutes}${period}`;
+  // Native time-picker format: "14:30" → "2:30pm"
+  const nativeMatch = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+  if (nativeMatch) {
+    const hours = Number(nativeMatch[1]);
+    const minutes = nativeMatch[2];
+    const period = hours >= 12 ? "pm" : "am";
+    const normalizedHours = hours % 12 || 12;
+    return `${normalizedHours}:${minutes}${period}`;
+  }
+
+  // User-typed: "7:30pm", "7:30 pm", "730pm", "730 PM"
+  const userMatch = trimmed.match(/^(\d{1,2}):?(\d{2})\s*(am|pm)$/i);
+  if (userMatch) {
+    let hours = Number(userMatch[1]);
+    const minutes = userMatch[2];
+    const period = userMatch[3].toLowerCase();
+    if (hours > 12 || hours < 1) return trimmed;
+    return `${hours}:${minutes}${period}`;
+  }
+
+  return trimmed;
 };
 
 const getSlotSortValue = (slot: string) => {
@@ -72,7 +88,27 @@ const RestaurantEditListingPage = () => {
     priceRange: managedRestaurant.priceRange,
     image: managedRestaurant.image,
   });
-  const [slotDraft, setSlotDraft] = useState("");
+  const [slotHour, setSlotHour] = useState("12");
+  const [slotMinute, setSlotMinute] = useState("00");
+  const [slotPeriod, setSlotPeriod] = useState<"am" | "pm">("pm");
+
+  // Parse existing openUntil into selectable parts
+  const parseTime = (val: string) => {
+    const m = val.match(/(\d{1,2}):(\d{2})(am|pm)/i);
+    if (!m) return { hour: "10", minute: "00", period: "pm" as const };
+    return { hour: m[1], minute: m[2], period: m[3].toLowerCase() as "am" | "pm" };
+  };
+  const openParsed = parseTime(form.openUntil);
+  const [openHour, setOpenHour] = useState(openParsed.hour);
+  const [openMinute, setOpenMinute] = useState(openParsed.minute);
+  const [openPeriod, setOpenPeriod] = useState<"am" | "pm">(openParsed.period);
+
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, openUntil: `${openHour}:${openMinute}${openPeriod}` }));
+  }, [openHour, openMinute, openPeriod]);
+
+  const hours = Array.from({ length: 12 }, (_, i) => String(i + 1));
+  const mins = ["00", "15", "30", "45"];
 
   useEffect(() => {
     setForm({
@@ -88,7 +124,6 @@ const RestaurantEditListingPage = () => {
       priceRange: managedRestaurant.priceRange,
       image: managedRestaurant.image,
     });
-    setSlotDraft("");
   }, [managedRestaurant]);
 
   const handleSave = () => {
@@ -107,27 +142,6 @@ const RestaurantEditListingPage = () => {
     });
     setSaved(true);
     setTimeout(() => navigate("/restaurant-dashboard"), 800);
-  };
-
-  const handleAddSlot = () => {
-    const normalizedSlot = toSlotLabel(slotDraft);
-    if (!slotDraft || form.availableSlots.includes(normalizedSlot)) {
-      setSlotDraft("");
-      return;
-    }
-
-    setForm((prev) => ({
-      ...prev,
-      availableSlots: sortSlots([...prev.availableSlots, normalizedSlot]),
-    }));
-    setSlotDraft("");
-  };
-
-  const handleRemoveSlot = (slotToRemove: string) => {
-    setForm((prev) => ({
-      ...prev,
-      availableSlots: prev.availableSlots.filter((slot) => slot !== slotToRemove),
-    }));
   };
 
   const handleCoverUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -390,17 +404,39 @@ const RestaurantEditListingPage = () => {
               <label className="text-[11px] font-medium text-muted-foreground">
                 Open until
               </label>
-              <Input
-                value={form.openUntil}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    openUntil: event.target.value,
-                  }))
-                }
-                className="mt-1.5 h-11 rounded-2xl"
-                placeholder="e.g. 10:00pm"
-              />
+              <div className="mt-2 space-y-2">
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+                  {hours.map((h) => (
+                    <button key={h} type="button" onClick={() => setOpenHour(h)}
+                      className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                        openHour === h ? "bg-primary text-white shadow-sm" : "border border-input bg-background text-foreground"
+                      }`}
+                    >{h}</button>
+                  ))}
+                </div>
+                <div className="flex gap-1.5">
+                  {mins.map((m) => (
+                    <button key={m} type="button" onClick={() => setOpenMinute(m)}
+                      className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-95 ${
+                        openMinute === m ? "bg-primary text-white shadow-sm" : "border border-input bg-background text-foreground"
+                      }`}
+                    >:{m}</button>
+                  ))}
+                  <button type="button" onClick={() => setOpenPeriod("am")}
+                    className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-95 ${
+                      openPeriod === "am" ? "bg-primary text-white shadow-sm" : "border border-input bg-background text-foreground"
+                    }`}
+                  >AM</button>
+                  <button type="button" onClick={() => setOpenPeriod("pm")}
+                    className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-95 ${
+                      openPeriod === "pm" ? "bg-primary text-white shadow-sm" : "border border-input bg-background text-foreground"
+                    }`}
+                  >PM</button>
+                </div>
+                <p className="text-[11px] font-medium text-foreground/60">
+                  Selected: <span className="font-bold text-foreground">{openHour}:{openMinute}{openPeriod}</span>
+                </p>
+              </div>
             </div>
 
             <div>
@@ -444,29 +480,57 @@ const RestaurantEditListingPage = () => {
               <p className="mt-0.5 text-[10px] text-muted-foreground/70">
                 Tap a slot to remove it
               </p>
-              <div className="mt-2 flex items-center gap-2">
-                <Input
-                  value={slotDraft}
-                  onChange={(event) => setSlotDraft(event.target.value)}
-                  className="h-11 flex-1 rounded-2xl"
-                  placeholder="e.g. 7:30pm"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddSlot();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="cta"
-                  className="h-11 rounded-2xl px-5"
-                  onClick={handleAddSlot}
-                  disabled={!slotDraft}
-                >
-                  <Plus className="mr-1 h-4 w-4" />
-                  Add
-                </Button>
+              <div className="mt-2 space-y-2">
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+                  {hours.map((h) => (
+                    <button key={h} type="button" onClick={() => setSlotHour(h)}
+                      className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition-all active:scale-95 ${
+                        slotHour === h ? "bg-primary text-white shadow-sm" : "border border-input bg-background text-foreground"
+                      }`}
+                    >{h}</button>
+                  ))}
+                </div>
+                <div className="flex gap-1.5">
+                  {mins.map((m) => (
+                    <button key={m} type="button" onClick={() => setSlotMinute(m)}
+                      className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-95 ${
+                        slotMinute === m ? "bg-primary text-white shadow-sm" : "border border-input bg-background text-foreground"
+                      }`}
+                    >:{m}</button>
+                  ))}
+                  <button type="button" onClick={() => setSlotPeriod("am")}
+                    className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-95 ${
+                      slotPeriod === "am" ? "bg-primary text-white shadow-sm" : "border border-input bg-background text-foreground"
+                    }`}
+                  >AM</button>
+                  <button type="button" onClick={() => setSlotPeriod("pm")}
+                    className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all active:scale-95 ${
+                      slotPeriod === "pm" ? "bg-primary text-white shadow-sm" : "border border-input bg-background text-foreground"
+                    }`}
+                  >PM</button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-medium text-foreground/60">
+                    Selected: <span className="font-bold text-foreground">{slotHour}:{slotMinute}{slotPeriod}</span>
+                  </p>
+                  <Button
+                    type="button"
+                    variant="cta"
+                    className="h-9 rounded-xl px-4 text-xs"
+                    onClick={() => {
+                      const newSlot = `${slotHour}:${slotMinute}${slotPeriod}`;
+                      if (!form.availableSlots.includes(newSlot)) {
+                        setForm((prev) => ({
+                          ...prev,
+                          availableSlots: sortSlots([...prev.availableSlots, newSlot]),
+                        }));
+                      }
+                    }}
+                  >
+                    <Plus className="mr-1 h-3.5 w-3.5" />
+                    Add slot
+                  </Button>
+                </div>
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-2">
@@ -475,7 +539,12 @@ const RestaurantEditListingPage = () => {
                     <button
                       key={slot}
                       type="button"
-                      onClick={() => handleRemoveSlot(slot)}
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          availableSlots: prev.availableSlots.filter((s) => s !== slot),
+                        }))
+                      }
                       className="group flex items-center justify-center gap-1 rounded-xl border border-primary/20 bg-primary/5 px-2 py-2.5 text-xs font-semibold text-foreground transition-all hover:border-destructive/30 hover:bg-destructive/5 active:scale-95"
                     >
                       {slot}
