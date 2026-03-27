@@ -7,7 +7,6 @@ import {
   MapPin,
   Plus,
   Save,
-  Sparkles,
   Store,
   Tags,
   X,
@@ -208,21 +207,20 @@ const RestaurantEditListingPage = () => {
           />
 
           <div className="space-y-4 p-4">
-            <div className="rounded-2xl bg-white/70 p-4">
-              <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-primary/10 p-2.5">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    This is what customers see
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Search results, restaurant detail, booking checkout, and
-                    saved favorites all read from this listing.
-                  </p>
-                </div>
-              </div>
+            <div
+              className="rounded-2xl p-4"
+              style={{
+                background: "hsl(47 70% 94%)",
+                border: "1.5px solid hsl(47 60% 78%)",
+              }}
+            >
+              <p className="text-sm font-semibold" style={{ color: "hsl(47 80% 30%)" }}>
+                This is what customers see
+              </p>
+              <p className="mt-1 text-xs leading-5" style={{ color: "hsl(47 50% 40%)" }}>
+                Search results, restaurant detail, booking checkout, and
+                saved favorites all read from this listing.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
