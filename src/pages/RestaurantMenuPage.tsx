@@ -33,8 +33,8 @@ const statusColor: Record<
   NonNullable<RestaurantMenuItem["status"]>,
   string
 > = {
-  available: "border border-primary/30 text-primary",
-  sold_out: "border border-primary/30 text-primary",
+  available: "border border-success/30 text-success",
+  sold_out: "border border-destructive/30 text-destructive",
   time_based: "border border-primary/30 text-primary",
 };
 
@@ -320,7 +320,7 @@ const RestaurantMenuPage = () => {
                       <button
                         type="button"
                         onClick={() => removeMenuItem(item.id ?? "")}
-                        className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/30 text-primary transition-transform hover:scale-105 active:scale-95"
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-destructive/30 text-destructive transition-transform hover:scale-105 active:scale-95"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
