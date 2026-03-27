@@ -73,29 +73,6 @@ const RestaurantEditProfilePage = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-28 scrollbar-hide">
-        {/* Avatar */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="mb-4 rounded-2xl border border-border bg-secondary/20 p-4"
-        >
-          <p className="text-sm font-semibold text-foreground">
-            This page edits your owner account
-          </p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            To change the restaurant name, cover photo, description, menu, or
-            bookable time slots that customers see, edit your public listing.
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-3 rounded-full"
-            onClick={() => navigate("/restaurant-edit-listing")}
-          >
-            Edit restaurant listing
-          </Button>
-        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}

@@ -5,7 +5,9 @@ import {
   Camera,
   ChevronRight,
   CircleHelp,
+  Image as ImageIcon,
   LogOut,
+  Pencil,
   Settings,
   Shield,
   Star,
@@ -37,95 +39,141 @@ const RestaurantProfilePage = () => {
     <div className="relative flex h-full flex-col bg-background">
       <div className="safe-area-top" />
 
-      <div className="px-5 pb-3">
-        <h1 className="text-lg font-bold text-foreground">Profile</h1>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
-          Manage your owner account
-        </p>
-      </div>
-
       <div className="flex-1 overflow-y-auto pb-28 scrollbar-hide">
+        {/* ── Hero card ── */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center px-5 py-5"
+          className="mx-5 mt-2 overflow-hidden rounded-3xl"
+          style={{
+            background:
+              "linear-gradient(145deg, hsl(47 70% 92%) 0%, hsl(47 60% 85%) 100%)",
+            border: "1.5px solid hsl(47 65% 78%)",
+          }}
         >
-          <div className="relative">
-            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary/25 to-primary/5 text-3xl font-bold text-primary ring-4 ring-primary/10">
-              {user?.photo ? (
-                <img
-                  src={user.photo}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                displayName[0]?.toUpperCase() || "U"
-              )}
+          <div className="flex items-center gap-4 p-5">
+            <div className="relative shrink-0">
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white/70 text-2xl font-bold text-primary ring-[3px] ring-white/80">
+                {user?.photo ? (
+                  <img
+                    src={user.photo}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  displayName[0]?.toUpperCase() || "U"
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/restaurant-edit-profile")}
+                className="absolute -bottom-0.5 -right-0.5 rounded-full p-1.5 shadow-sm transition-transform active:scale-90"
+                style={{ background: "hsl(47 80% 53%)" }}
+              >
+                <Camera className="h-3 w-3 text-white" />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => navigate("/restaurant-edit-profile")}
-              className="absolute -bottom-1 -right-1 rounded-full bg-primary p-2.5 shadow-lg shadow-primary/30 transition-transform active:scale-90"
-            >
-              <Camera className="h-4 w-4 text-primary-foreground" />
-            </button>
-          </div>
 
-          <p className="mt-3 text-lg font-bold text-foreground">
-            {displayName}
-          </p>
-          <p className="text-xs text-muted-foreground">{displayEmail}</p>
-          <p className="text-xs text-muted-foreground">{displayPhone}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-bold text-foreground">
+                {displayName}
+              </p>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                {displayEmail}
+              </p>
+              <div
+                className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1"
+                style={{
+                  background: "hsl(47 75% 85%)",
+                  border: "1px solid hsl(47 65% 72%)",
+                }}
+              >
+                <Store className="h-3 w-3" style={{ color: "hsl(47 80% 38%)" }} />
+                <span
+                  className="text-[10px] font-semibold"
+                  style={{ color: "hsl(47 80% 32%)" }}
+                >
+                  {managedRestaurant.name}
+                </span>
+              </div>
+            </div>
+          </div>
         </motion.div>
 
-        <div className="space-y-4 px-5">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-2xl border border-border p-4"
+        {/* ── Quick actions (side-by-side) ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="mt-4 grid grid-cols-2 gap-3 px-5"
+        >
+          <button
+            type="button"
+            onClick={() => navigate("/restaurant-edit-listing")}
+            className="group flex flex-col items-center gap-2.5 rounded-2xl p-4 text-center transition-all active:scale-[0.97]"
+            style={{
+              background:
+                "linear-gradient(160deg, hsl(47 70% 94%) 0%, hsl(47 55% 88%) 100%)",
+              border: "1.5px solid hsl(47 60% 78%)",
+            }}
           >
-            <div className="flex items-start gap-3">
-              <div className="rounded-xl bg-secondary p-2.5">
-                <Store className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Restaurant access
-                </p>
-                <p className="mt-1 text-sm font-semibold text-foreground">
-                  {managedRestaurant.name}
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Manage business settings, reservation updates, reviews, and
-                  restaurant profile details from one place.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => navigate("/restaurant-edit-listing")}
-                  className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-                >
-                  Edit public listing
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate("/restaurant-stories")}
-                  className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary"
-                >
-                  Manage stories
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
+            <div
+              className="flex h-11 w-11 items-center justify-center rounded-xl"
+              style={{
+                background: "hsl(47 75% 82%)",
+                border: "1px solid hsl(47 60% 72%)",
+              }}
+            >
+              <Pencil className="h-[18px] w-[18px]" style={{ color: "hsl(47 85% 35%)" }} />
             </div>
-          </motion.div>
+            <div>
+              <p className="text-[13px] font-semibold text-foreground">
+                Edit listing
+              </p>
+              <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">
+                Name, photos & slots
+              </p>
+            </div>
+          </button>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="overflow-hidden rounded-2xl border border-border"
+          <button
+            type="button"
+            onClick={() => navigate("/restaurant-stories")}
+            className="group flex flex-col items-center gap-2.5 rounded-2xl p-4 text-center transition-all active:scale-[0.97]"
+            style={{
+              background:
+                "linear-gradient(160deg, hsl(47 70% 94%) 0%, hsl(47 55% 88%) 100%)",
+              border: "1.5px solid hsl(47 60% 78%)",
+            }}
           >
+            <div
+              className="flex h-11 w-11 items-center justify-center rounded-xl"
+              style={{
+                background: "hsl(47 75% 82%)",
+                border: "1px solid hsl(47 60% 72%)",
+              }}
+            >
+              <ImageIcon className="h-[18px] w-[18px]" style={{ color: "hsl(47 85% 35%)" }} />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-foreground">
+                Manage stories
+              </p>
+              <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">
+                Add or remove stories
+              </p>
+            </div>
+          </button>
+        </motion.div>
+
+        {/* ── Menu list ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.14 }}
+          className="mt-4 px-5"
+        >
+          <div className="overflow-hidden rounded-2xl border border-border">
             {menuItems.map((item, i) => (
               <button
                 key={item.label}
@@ -144,24 +192,17 @@ const RestaurantProfilePage = () => {
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
             ))}
-          </motion.div>
+          </div>
+        </motion.div>
 
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            type="button"
-            onClick={() => navigate("/restaurant-edit-profile")}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 active:bg-secondary"
-          >
-            <User className="h-4 w-4" />
-            Edit owner profile
-          </motion.button>
-
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
+        {/* ── Log out ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-4 px-5"
+        >
+          <button
             type="button"
             onClick={() => {
               logout();
@@ -171,8 +212,8 @@ const RestaurantProfilePage = () => {
           >
             <LogOut className="h-4 w-4" />
             Log out
-          </motion.button>
-        </div>
+          </button>
+        </motion.div>
       </div>
 
       <RestaurantBottomNav />

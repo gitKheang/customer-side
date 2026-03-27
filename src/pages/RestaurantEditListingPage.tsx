@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
-  Clock3,
   Eye,
   ImagePlus,
   MapPin,
@@ -67,6 +66,7 @@ const RestaurantEditListingPage = () => {
     description: managedRestaurant.description,
     address: managedRestaurant.address,
     openUntil: managedRestaurant.openUntil,
+    isOpen: managedRestaurant.isOpen,
     tags: toCommaSeparated(managedRestaurant.tags),
     availableSlots: managedRestaurant.availableSlots,
     type: managedRestaurant.type,
@@ -82,6 +82,7 @@ const RestaurantEditListingPage = () => {
       description: managedRestaurant.description,
       address: managedRestaurant.address,
       openUntil: managedRestaurant.openUntil,
+      isOpen: managedRestaurant.isOpen,
       tags: toCommaSeparated(managedRestaurant.tags),
       availableSlots: managedRestaurant.availableSlots,
       type: managedRestaurant.type,
@@ -98,6 +99,7 @@ const RestaurantEditListingPage = () => {
       description: form.description.trim() || managedRestaurant.description,
       address: form.address.trim() || managedRestaurant.address,
       openUntil: form.openUntil.trim() || managedRestaurant.openUntil,
+      isOpen: form.isOpen,
       image: form.image,
       type: form.type,
       priceRange: form.priceRange,
@@ -147,34 +149,22 @@ const RestaurantEditListingPage = () => {
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background">
       <div className="safe-area-top" />
 
-      <div className="flex items-center justify-between gap-3 px-5 pb-3">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => goBackOr(navigate, "/restaurant-settings")}
-            className="rounded-full p-2 transition-colors hover:bg-secondary active:scale-90"
-          >
-            <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
-          <div>
-            <h1 className="text-lg font-bold text-foreground">
-              Restaurant Listing
-            </h1>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Update the profile customers browse and book
-            </p>
-          </div>
-        </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`text-xs font-semibold ${saved ? "text-success" : "text-primary"}`}
-          onClick={handleSave}
-          disabled={saved}
+      <div className="flex items-center gap-3 px-5 pb-3">
+        <button
+          type="button"
+          onClick={() => goBackOr(navigate, "/restaurant-settings")}
+          className="rounded-full p-2 transition-colors hover:bg-secondary active:scale-90"
         >
-          {saved ? "Saved!" : "Save"}
-        </Button>
+          <ArrowLeft className="h-5 w-5 text-foreground" />
+        </button>
+        <div>
+          <h1 className="text-lg font-bold text-foreground">
+            Restaurant Listing
+          </h1>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Update the profile customers browse and book
+          </p>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-28 scrollbar-hide">
@@ -309,46 +299,68 @@ const RestaurantEditListingPage = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-medium text-muted-foreground">
-                  Venue type
-                </label>
-                <select
-                  value={form.type}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      type: event.target.value as typeof prev.type,
-                    }))
-                  }
-                  className="mt-1.5 h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="restaurant">Restaurant</option>
-                  <option value="pub">Pub</option>
-                  <option value="cafe">Cafe</option>
-                  <option value="nightclub">Night club</option>
-                </select>
+            <div>
+              <label className="text-[11px] font-medium text-muted-foreground">
+                Venue type
+              </label>
+              <div className="mt-1.5 flex flex-wrap gap-2">
+                {(
+                  [
+                    { value: "restaurant", label: "Restaurant" },
+                    { value: "pub", label: "Pub" },
+                    { value: "cafe", label: "Cafe" },
+                    { value: "nightclub", label: "Night club" },
+                  ] as const
+                ).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => ({ ...prev, type: option.value }))
+                    }
+                    className={`rounded-full px-4 py-2.5 text-xs font-semibold transition-all active:scale-95 ${
+                      form.type === option.value
+                        ? "bg-primary text-white shadow-sm"
+                        : "border border-input bg-background text-foreground"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
-              <div>
-                <label className="text-[11px] font-medium text-muted-foreground">
-                  Price range
-                </label>
-                <select
-                  value={form.priceRange}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      priceRange: event.target.value,
-                    }))
-                  }
-                  className="mt-1.5 h-11 w-full rounded-2xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="$">$</option>
-                  <option value="$$">$$</option>
-                  <option value="$$$">$$$</option>
-                  <option value="$$$$">$$$$</option>
-                </select>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-medium text-muted-foreground">
+                Price range
+              </label>
+              <div className="mt-1.5 flex gap-2">
+                {(
+                  [
+                    { value: "$", label: "$" },
+                    { value: "$$", label: "$$" },
+                    { value: "$$$", label: "$$$" },
+                    { value: "$$$$", label: "$$$$" },
+                  ] as const
+                ).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        priceRange: option.value,
+                      }))
+                    }
+                    className={`flex-1 rounded-full py-2.5 text-xs font-semibold transition-all active:scale-95 ${
+                      form.priceRange === option.value
+                        ? "bg-primary text-white shadow-sm"
+                        : "border border-input bg-background text-foreground"
+                    }`}
+                  >
+                    {option.value}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -389,61 +401,94 @@ const RestaurantEditListingPage = () => {
                   }))
                 }
                 className="mt-1.5 h-11 rounded-2xl"
-                placeholder="10:00pm"
+                placeholder="e.g. 10:00pm"
               />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-medium text-muted-foreground">
+                Status
+              </label>
+              <div className="mt-1.5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({ ...prev, isOpen: true }))
+                  }
+                  className={`flex-1 rounded-full py-2.5 text-xs font-semibold transition-all active:scale-95 ${
+                    form.isOpen
+                      ? "bg-success text-white shadow-sm"
+                      : "border border-input bg-background text-foreground"
+                  }`}
+                >
+                  Open
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({ ...prev, isOpen: false }))
+                  }
+                  className={`flex-1 rounded-full py-2.5 text-xs font-semibold transition-all active:scale-95 ${
+                    !form.isOpen
+                      ? "bg-destructive text-white shadow-sm"
+                      : "border border-input bg-background text-foreground"
+                  }`}
+                >
+                  Closed
+                </button>
+              </div>
             </div>
 
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">
                 Bookable time slots
               </label>
-              <div className="mt-1.5 rounded-2xl border border-input bg-background p-3">
-                <div className="flex items-center gap-2">
-                  <div className="relative min-w-0 flex-1">
-                    <Clock3 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      type="time"
-                      value={slotDraft}
-                      onChange={(event) => setSlotDraft(event.target.value)}
-                      className="h-11 rounded-2xl pl-9"
-                    />
+              <p className="mt-0.5 text-[10px] text-muted-foreground/70">
+                Tap a slot to remove it
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <Input
+                  value={slotDraft}
+                  onChange={(event) => setSlotDraft(event.target.value)}
+                  className="h-11 flex-1 rounded-2xl"
+                  placeholder="e.g. 7:30pm"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddSlot();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="cta"
+                  className="h-11 rounded-2xl px-5"
+                  onClick={handleAddSlot}
+                  disabled={!slotDraft}
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Add
+                </Button>
+              </div>
+
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {form.availableSlots.length > 0 ? (
+                  form.availableSlots.map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => handleRemoveSlot(slot)}
+                      className="group flex items-center justify-center gap-1 rounded-xl border border-primary/20 bg-primary/5 px-2 py-2.5 text-xs font-semibold text-foreground transition-all hover:border-destructive/30 hover:bg-destructive/5 active:scale-95"
+                    >
+                      {slot}
+                      <X className="h-3 w-3 text-primary/40 group-hover:text-destructive" />
+                    </button>
+                  ))
+                ) : (
+                  <div className="col-span-3 rounded-xl border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
+                    No slots added yet
                   </div>
-                  <Button
-                    type="button"
-                    variant="cta"
-                    className="h-11 rounded-2xl px-4"
-                    onClick={handleAddSlot}
-                    disabled={!slotDraft}
-                  >
-                    <Plus className="mr-1 h-4 w-4" />
-                    Add
-                  </Button>
-                </div>
-
-                <p className="mt-2 text-[11px] leading-5 text-muted-foreground">
-                  Add one slot at a time. Customers will see these as the
-                  available booking times on your listing.
-                </p>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {form.availableSlots.length > 0 ? (
-                    form.availableSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => handleRemoveSlot(slot)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/8 px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-primary/12"
-                      >
-                        {slot}
-                        <X className="h-3.5 w-3.5 text-primary" />
-                      </button>
-                    ))
-                  ) : (
-                    <div className="rounded-2xl bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">
-                      No slots added yet
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>
