@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -5,6 +6,8 @@ import {
   useEffect,
   ReactNode,
 } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { getPreferredIdentifier } from "@/lib/authValidation";
 
 interface FavoritesContextType {
   favorites: string[];
@@ -23,23 +26,57 @@ export const useFavorites = () => {
 
 const FAVORITES_KEY = "rra_favorites";
 
+type FavoritesStore = Record<string, string[]>;
+
+const LEGACY_SCOPE = "legacy";
+
 export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
-  const [favorites, setFavorites] = useState<string[]>(() => {
+  const { user, isAuthenticated, isGuest, isReady } = useAuth();
+  const [favoriteStore, setFavoriteStore] = useState<FavoritesStore>(() => {
     try {
-      return JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]");
+      const parsed = JSON.parse(localStorage.getItem(FAVORITES_KEY) || "{}");
+      if (Array.isArray(parsed)) {
+        return { [LEGACY_SCOPE]: parsed as string[] };
+      }
+      return parsed && typeof parsed === "object"
+        ? (parsed as FavoritesStore)
+        : {};
     } catch {
-      return [];
+      return {};
     }
   });
 
+  const activeScope = !isReady
+    ? ""
+    : isAuthenticated
+      ? `${user?.role || "customer"}:${getPreferredIdentifier(user?.email, user?.phone)}`
+      : isGuest
+        ? "guest"
+        : "";
+
+  const legacyFavorites = favoriteStore[LEGACY_SCOPE] ?? [];
+  const favorites = activeScope
+    ? favoriteStore[activeScope] ?? legacyFavorites
+    : legacyFavorites;
+
   useEffect(() => {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
-  }, [favorites]);
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favoriteStore));
+  }, [favoriteStore]);
 
   const toggleFavorite = (id: string) => {
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id],
-    );
+    if (!activeScope) return;
+
+    setFavoriteStore((prev) => {
+      const currentFavorites = prev[activeScope] ?? prev[LEGACY_SCOPE] ?? [];
+      const nextFavorites = currentFavorites.includes(id)
+        ? currentFavorites.filter((favoriteId) => favoriteId !== id)
+        : [...currentFavorites, id];
+
+      return {
+        ...prev,
+        [activeScope]: nextFavorites,
+      };
+    });
   };
 
   const isFavorite = (id: string) => favorites.includes(id);

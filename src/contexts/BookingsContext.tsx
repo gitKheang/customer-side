@@ -7,6 +7,7 @@ import {
   ReactNode,
 } from "react";
 import { Booking, mockBookings } from "@/data/mockData";
+import { normalizeIdentifier } from "@/lib/authValidation";
 
 export interface Notification {
   id: string;
@@ -17,6 +18,7 @@ export interface Notification {
     | "booking_modified"
     | "reminder";
   recipientEmail?: string;
+  recipientIdentifier?: string;
   restaurantId?: string;
   title: string;
   message: string;
@@ -88,6 +90,29 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     getStored(NOTIFICATIONS_KEY, []),
   );
 
+  // Auto-complete past bookings so stored status stays in sync with display
+  useEffect(() => {
+    const now = new Date();
+    const hasStale = bookings.some((b) => {
+      if (b.status !== "upcoming") return false;
+      const dt = new Date(`${b.date}T${convertTo24h(b.time)}:00`);
+      return !Number.isNaN(dt.getTime()) && dt < now;
+    });
+
+    if (hasStale) {
+      setBookings((prev) =>
+        prev.map((b) => {
+          if (b.status !== "upcoming") return b;
+          const dt = new Date(`${b.date}T${convertTo24h(b.time)}:00`);
+          if (!Number.isNaN(dt.getTime()) && dt < now) {
+            return { ...b, status: "completed" as const };
+          }
+          return b;
+        }),
+      );
+    }
+  }, [bookings]);
+
   useEffect(() => {
     localStorage.setItem(BOOKINGS_KEY, JSON.stringify(bookings));
   }, [bookings]);
@@ -116,6 +141,8 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
       audience: "customer",
       type: "booking_confirmed",
       recipientEmail: booking.bookingEmail,
+      recipientIdentifier:
+        booking.customerIdentifier || normalizeIdentifier(booking.bookingEmail),
       restaurantId: booking.restaurantId,
       title: "Booking Confirmed",
       message: `Reservation ${booking.bookingReference} at ${booking.restaurantName} on ${booking.date} at ${booking.time} is confirmed.`,
@@ -164,6 +191,8 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
       audience: "customer",
       type: "booking_cancelled",
       recipientEmail: booking.bookingEmail,
+      recipientIdentifier:
+        booking.customerIdentifier || normalizeIdentifier(booking.bookingEmail),
       restaurantId: booking.restaurantId,
       title: "Booking Cancelled",
       message: `Your booking at ${booking.restaurantName} on ${booking.date} at ${booking.time} has been cancelled.`,
@@ -201,14 +230,16 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
       };
     }
 
+    const nextBooking = {
+      ...booking,
+      ...updates,
+      status: "upcoming" as const,
+    };
+
     setBookings((prev) =>
       prev.map((b) =>
         b.id === id
-          ? {
-              ...b,
-              ...updates,
-              status: "upcoming" as const,
-            }
+          ? nextBooking
           : b,
       ),
     );
@@ -216,18 +247,21 @@ export const BookingsProvider = ({ children }: { children: ReactNode }) => {
     addNotification({
       audience: "customer",
       type: "booking_modified",
-      recipientEmail: booking.bookingEmail,
+      recipientEmail: nextBooking.bookingEmail,
+      recipientIdentifier:
+        nextBooking.customerIdentifier ||
+        normalizeIdentifier(nextBooking.bookingEmail),
       restaurantId: booking.restaurantId,
       title: "Booking Updated",
-      message: `Your reservation ${booking.bookingReference} at ${booking.restaurantName} has been updated to ${updates.date} at ${updates.time}.`,
+      message: `Your reservation ${booking.bookingReference} at ${booking.restaurantName} has been updated to ${nextBooking.date} at ${nextBooking.time}.`,
     });
     addNotification({
       audience: "restaurant",
       type: "booking_modified",
-      recipientEmail: booking.bookingEmail,
+      recipientEmail: nextBooking.bookingEmail,
       restaurantId: booking.restaurantId,
       title: "Reservation Updated",
-      message: `${booking.bookingName} updated the reservation to ${updates.date} at ${updates.time}.`,
+      message: `${nextBooking.bookingName} updated the reservation to ${nextBooking.date} at ${nextBooking.time}.`,
     });
 
     return {

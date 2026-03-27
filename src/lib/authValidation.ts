@@ -28,3 +28,16 @@ export function isValidIdentifier(value: string) {
   const trimmed = value.trim();
   return EMAIL_REGEX.test(trimmed) || isValidPhone(trimmed);
 }
+
+export function getPreferredIdentifier(
+  email?: string | null,
+  phone?: string | null,
+) {
+  const normalizedEmail = normalizeIdentifier(email || "");
+  if (normalizedEmail && EMAIL_REGEX.test((email || "").trim())) {
+    return normalizedEmail;
+  }
+
+  const normalizedPhone = normalizePhone(phone || "");
+  return normalizedPhone;
+}

@@ -49,6 +49,7 @@ export interface Restaurant {
 export interface Booking {
   id: string;
   bookingReference: string;
+  customerIdentifier?: string;
   restaurantId: string;
   restaurantName: string;
   restaurantImage: string;

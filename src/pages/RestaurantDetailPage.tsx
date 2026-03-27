@@ -33,6 +33,10 @@ import {
   getBookableSlots,
   getBookingDateTime,
 } from "@/lib/bookingAvailability";
+import {
+  getPreferredIdentifier,
+  normalizeIdentifier,
+} from "@/lib/authValidation";
 
 const formatReviewCount = (count: number) => {
   if (count >= 1000) {
@@ -86,10 +90,10 @@ const RestaurantDetailPage = () => {
   const latestStory = restaurant.stories?.[restaurant.stories.length - 1];
   const showStoryEntry = hasRestaurantStories(restaurant);
   const restaurantReviews = getReviewsForRestaurant(restaurant.id);
-  const userEmail = user?.email?.trim().toLowerCase() || "";
-  const isSignedInUser = isAuthenticated && !isGuest && !!userEmail;
+  const userIdentifier = getPreferredIdentifier(user?.email, user?.phone);
+  const isSignedInUser = isAuthenticated && !isGuest && !!userIdentifier;
   const userAlreadyReviewed = isSignedInUser
-    ? hasUserReviewed(restaurant.id, userEmail)
+    ? hasUserReviewed(restaurant.id, userIdentifier)
     : false;
   const photoGallery = [restaurant.image, ...restaurant.menu.map((m) => m.image)];
   const todayIso = formatDateISO(new Date());
@@ -105,13 +109,18 @@ const RestaurantDetailPage = () => {
 
   const existingUserReview = isSignedInUser
     ? restaurantReviews.find(
-        (review) => review.authorEmail.toLowerCase() === userEmail,
+        (review) => normalizeIdentifier(review.authorEmail) === userIdentifier,
       )
     : undefined;
   const hasCompletedVisit = isSignedInUser
     ? bookings.some((booking) => {
         if (booking.restaurantId !== restaurant.id) return false;
-        if (booking.bookingEmail.toLowerCase() !== userEmail) return false;
+        if (
+          (booking.customerIdentifier ||
+            normalizeIdentifier(booking.bookingEmail)) !== userIdentifier
+        ) {
+          return false;
+        }
 
         if (booking.status === "completed") return true;
         if (booking.status === "cancelled") return false;
@@ -149,7 +158,7 @@ const RestaurantDetailPage = () => {
       rating: reviewRating,
       comment: reviewComment,
       authorName: user.name,
-      authorEmail: user.email,
+      authorEmail: user.email || user.phone,
     });
 
     if (!result.success) return;
@@ -158,12 +167,22 @@ const RestaurantDetailPage = () => {
   };
 
   const isVerifiedReview = (review: Review) => {
-    return bookings.some(
-      (booking) =>
-        booking.restaurantId === review.restaurantId &&
-        booking.status === "completed" &&
-        booking.bookingEmail.toLowerCase() === review.authorEmail.toLowerCase(),
-    );
+    return bookings.some((booking) => {
+      if (booking.restaurantId !== review.restaurantId) return false;
+      if (
+        (booking.customerIdentifier ||
+          normalizeIdentifier(booking.bookingEmail)) !==
+        normalizeIdentifier(review.authorEmail)
+      )
+        return false;
+      if (booking.status === "completed") return true;
+      // Also treat past upcoming bookings as verified (auto-complete may not have run yet)
+      if (booking.status === "upcoming") {
+        const dt = getBookingDateTime(booking.date, booking.time);
+        return !Number.isNaN(dt.getTime()) && dt < new Date();
+      }
+      return false;
+    });
   };
 
   const handleMoreInfo = () => {
@@ -222,8 +241,8 @@ const RestaurantDetailPage = () => {
           </h1>
           <div className="mt-1.5 flex items-center gap-2 text-xs text-background/80">
             <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-              Open now
+              <span className={`h-2 w-2 rounded-full ${restaurant.isOpen ? "bg-success animate-pulse" : "bg-muted-foreground"}`} />
+              {restaurant.isOpen ? "Open now" : "Closed"}
             </span>
             <span className="text-background/40">•</span>
             <Star className="h-3 w-3 fill-warning text-warning" />
@@ -578,7 +597,9 @@ const RestaurantDetailPage = () => {
                   navigate("/signin");
                   return;
                 }
-                navigate(`/book/${restaurant.id}`);
+                navigate(`/book/${restaurant.id}`, {
+                  state: selectedSlot ? { preselectedTime: selectedSlot } : undefined,
+                });
               }}
             >
               {hasAvailabilityToday ? "Book a Table" : "Check Another Date"}

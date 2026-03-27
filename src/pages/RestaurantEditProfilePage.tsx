@@ -12,6 +12,7 @@ const RestaurantEditProfilePage = () => {
   const navigate = useNavigate();
   const { user, updateProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const [form, setForm] = useState({
     fullName: user?.name || "Phorn Sinet",
     email: user?.email || "sinet@gmail.com",
@@ -19,7 +20,17 @@ const RestaurantEditProfilePage = () => {
   });
 
   const handleSave = () => {
-    updateProfile({ name: form.fullName, email: form.email, phone: form.phone });
+    const result = updateProfile({
+      name: form.fullName,
+      email: form.email,
+      phone: form.phone,
+    });
+    if (!result.success) {
+      setErrorMessage(result.message);
+      return;
+    }
+
+    setErrorMessage("");
     navigate(-1);
   };
 
@@ -166,6 +177,11 @@ const RestaurantEditProfilePage = () => {
               className="mt-1.5 h-11 rounded-xl"
             />
           </div>
+          {errorMessage ? (
+            <p className="text-xs font-medium text-destructive">
+              {errorMessage}
+            </p>
+          ) : null}
         </motion.div>
       </div>
 

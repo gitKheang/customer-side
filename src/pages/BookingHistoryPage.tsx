@@ -7,6 +7,10 @@ import { motion } from "framer-motion";
 import { useBookings } from "@/contexts/BookingsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRestaurantData } from "@/contexts/RestaurantDataContext";
+import {
+  getPreferredIdentifier,
+  normalizeIdentifier,
+} from "@/lib/authValidation";
 
 const convertTo24h = (time12h: string) => {
   const match = time12h.match(/^(\d{1,2}):(\d{2})(am|pm)$/i);
@@ -31,7 +35,7 @@ const BookingHistoryPage = () => {
   const { user, isAuthenticated, isGuest } = useAuth();
   const { getRestaurantById } = useRestaurantData();
   const [tab, setTab] = useState<HistoryTab>("upcoming");
-  const normalizedUserEmail = user?.email?.trim().toLowerCase() || "";
+  const currentUserIdentifier = getPreferredIdentifier(user?.email, user?.phone);
 
   const getDisplayStatus = (
     booking: (typeof bookings)[number],
@@ -50,8 +54,9 @@ const BookingHistoryPage = () => {
 
   const customerBookings = bookings.filter(
     (booking) =>
-      normalizedUserEmail.length > 0 &&
-      booking.bookingEmail.toLowerCase() === normalizedUserEmail,
+      currentUserIdentifier.length > 0 &&
+      (booking.customerIdentifier ||
+        normalizeIdentifier(booking.bookingEmail)) === currentUserIdentifier,
   );
 
   const filtered = customerBookings.filter((booking) => {

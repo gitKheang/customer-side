@@ -8,8 +8,12 @@ import {
 } from "react";
 import {
   detectIdentifierType,
+  getPreferredIdentifier,
   isValidIdentifier,
+  isValidPhone,
   normalizeIdentifier,
+  normalizePhone,
+  EMAIL_REGEX,
 } from "@/lib/authValidation";
 
 export interface User {
@@ -39,7 +43,9 @@ interface AuthContextType {
   ) => { success: boolean; message: string };
   guestLogin: () => void;
   logout: () => void;
-  updateProfile: (updates: Partial<User>) => void;
+  updateProfile: (
+    updates: Partial<User>,
+  ) => { success: boolean; message: string };
   resetPassword: (
     identifier: string,
     newPassword: string,
@@ -242,11 +248,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateProfile = (updates: Partial<User>) => {
-    if (!user) return;
-    const updatedUser = { ...user, ...updates };
-    setUser(updatedUser);
+    if (!user) {
+      return { success: false, message: "No signed-in user found" };
+    }
 
-    // Update in stored users
+    const nextName = updates.name ?? user.name;
+    const rawNextEmail = updates.email ?? user.email;
+    const rawNextPhone = updates.phone ?? user.phone;
+
+    const trimmedEmail = rawNextEmail.trim();
+    const trimmedPhone = rawNextPhone.trim();
+
+    if (trimmedEmail && !EMAIL_REGEX.test(trimmedEmail)) {
+      return {
+        success: false,
+        message: "Please enter a valid email address",
+      };
+    }
+
+    if (trimmedPhone && !isValidPhone(trimmedPhone)) {
+      return {
+        success: false,
+        message: "Please enter a valid phone number",
+      };
+    }
+
+    const nextEmail = trimmedEmail ? normalizeIdentifier(trimmedEmail) : "";
+    const nextPhone = trimmedPhone ? normalizePhone(trimmedPhone) : "";
+
+    if (!nextEmail && !nextPhone) {
+      return {
+        success: false,
+        message: "Keep at least one valid email or phone number on the account",
+      };
+    }
+
     const users = getStoredUsers();
     const currentSession = getSession();
     const currentIdentifier = currentSession
@@ -255,9 +291,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const currentEmail = normalizeIdentifier(user.email || "");
     const currentPhone = normalizeIdentifier(user.phone || "");
 
-    const idx = users.findIndex((u) => {
-      const userEmail = normalizeIdentifier(u.email || "");
-      const userPhone = normalizeIdentifier(u.phone || "");
+    const idx = users.findIndex((storedUser) => {
+      const userEmail = normalizeIdentifier(storedUser.email || "");
+      const userPhone = normalizeIdentifier(storedUser.phone || "");
       return (
         userEmail === currentIdentifier ||
         userPhone === currentIdentifier ||
@@ -265,24 +301,69 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
     });
 
+    if (idx === -1) {
+      return { success: false, message: "Account could not be updated" };
+    }
+
+    const duplicateUser = users.find((storedUser, index) => {
+      if (index === idx) return false;
+
+      const storedEmail = normalizeIdentifier(storedUser.email || "");
+      const storedPhone = normalizeIdentifier(storedUser.phone || "");
+      return (
+        (!!nextEmail && storedEmail === nextEmail) ||
+        (!!nextPhone && storedPhone === nextPhone)
+      );
+    });
+
+    if (duplicateUser) {
+      return {
+        success: false,
+        message: "That email or phone number is already used by another account",
+      };
+    }
+
+    const updatedUser = {
+      ...user,
+      ...updates,
+      name: nextName,
+      email: nextEmail,
+      phone: nextPhone,
+    };
+    setUser(updatedUser);
+
+    // Update in stored users
     if (idx !== -1) {
-      users[idx] = { ...users[idx], ...updates };
+      users[idx] = {
+        ...users[idx],
+        ...updates,
+        name: nextName,
+        email: nextEmail,
+        phone: nextPhone,
+      };
       // Keep session identifier in sync if the active login identifier changed.
       if (currentSession && !currentSession.isGuest) {
-        if (updates.email && currentIdentifier === currentEmail) {
+        if (nextEmail && currentIdentifier === currentEmail) {
           saveSession({
-            identifier: normalizeIdentifier(updates.email),
+            identifier: nextEmail,
             isGuest: false,
           });
-        } else if (updates.phone && currentIdentifier === currentPhone) {
+        } else if (nextPhone && currentIdentifier === currentPhone) {
           saveSession({
-            identifier: normalizeIdentifier(updates.phone),
+            identifier: nextPhone,
             isGuest: false,
           });
+        } else if (!currentIdentifier) {
+          const nextIdentifier = getPreferredIdentifier(nextEmail, nextPhone);
+          if (nextIdentifier) {
+            saveSession({ identifier: nextIdentifier, isGuest: false });
+          }
         }
       }
       saveStoredUsers(users);
     }
+
+    return { success: true, message: "Profile updated successfully" };
   };
 
   const resetPassword = (identifier: string, newPassword: string) => {

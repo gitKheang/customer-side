@@ -17,15 +17,17 @@ import RestaurantBottomNav from "@/components/RestaurantBottomNav";
 import { useBookings } from "@/contexts/BookingsContext";
 import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 import { useReviews } from "@/contexts/ReviewsContext";
+const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const currentDay = dayNames[new Date().getDay()];
 const weekData = [
   { day: "Mon", value: 60 },
   { day: "Tue", value: 75 },
-  { day: "Wed", value: 85, current: true },
+  { day: "Wed", value: 85 },
   { day: "Thu", value: 55 },
   { day: "Fri", value: 70 },
   { day: "Sat", value: 80 },
   { day: "Sun", value: 65 },
-];
+].map((d) => ({ ...d, current: d.day === currentDay }));
 
 const RestaurantDashboardPage = () => {
   const navigate = useNavigate();

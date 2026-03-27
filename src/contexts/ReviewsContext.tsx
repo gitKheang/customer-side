@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -7,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { type Restaurant, type Review, mockReviews } from "@/data/mockData";
+import { normalizeIdentifier } from "@/lib/authValidation";
 
 interface RestaurantRatingStats {
   averageRating: number;
@@ -107,16 +109,18 @@ export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
   ) => {
     const aggregate = ratingAggregates[restaurant.id] || { count: 0, sum: 0 };
 
-    // Cap the prior influence so new mock reviews still move the visible score.
-    const priorWeight = Math.min(restaurant.reviewCount, 50);
-    const weightedCount = priorWeight + aggregate.count;
-    const weightedRating =
-      (restaurant.rating * priorWeight + aggregate.sum) /
-      Math.max(weightedCount, 1);
+    // If we have dynamic reviews for this restaurant, use them directly.
+    // Otherwise fall back to the static rating from the restaurant object.
+    if (aggregate.count > 0) {
+      return {
+        averageRating: Number((aggregate.sum / aggregate.count).toFixed(1)),
+        reviewCount: aggregate.count,
+      };
+    }
 
     return {
-      averageRating: Number(weightedRating.toFixed(1)),
-      reviewCount: restaurant.reviewCount + aggregate.count,
+      averageRating: restaurant.rating,
+      reviewCount: restaurant.reviewCount,
     };
   };
 
@@ -127,11 +131,11 @@ export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
     authorName,
     authorEmail,
   }: SubmitReviewInput) => {
-    const normalizedEmail = authorEmail.trim().toLowerCase();
+    const normalizedIdentifier = normalizeIdentifier(authorEmail);
     const normalizedName = authorName.trim();
     const cleanComment = comment.trim();
 
-    if (!restaurantId || !normalizedEmail) {
+    if (!restaurantId || !normalizedIdentifier) {
       return { success: false, message: "Unable to identify this review" };
     }
 
@@ -149,7 +153,7 @@ export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
     const existingReview = reviews.find(
       (review) =>
         review.restaurantId === restaurantId &&
-        review.authorEmail.toLowerCase() === normalizedEmail,
+        normalizeIdentifier(review.authorEmail) === normalizedIdentifier,
     );
 
     if (existingReview) {
@@ -175,8 +179,8 @@ export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
       restaurantId,
       rating,
       comment: cleanComment,
-      authorName: normalizedName || normalizedEmail.split("@")[0],
-      authorEmail: normalizedEmail,
+      authorName: normalizedName || normalizedIdentifier.split("@")[0],
+      authorEmail: normalizedIdentifier,
       createdAt: new Date().toISOString(),
     };
 
@@ -186,15 +190,15 @@ export const ReviewsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const hasUserReviewed = (restaurantId: string, authorEmail: string) => {
-    const normalizedEmail = authorEmail.trim().toLowerCase();
-    if (!normalizedEmail) {
+    const normalizedIdentifier = normalizeIdentifier(authorEmail);
+    if (!normalizedIdentifier) {
       return false;
     }
 
     return reviews.some(
       (review) =>
         review.restaurantId === restaurantId &&
-        review.authorEmail.toLowerCase() === normalizedEmail,
+        normalizeIdentifier(review.authorEmail) === normalizedIdentifier,
     );
   };
 

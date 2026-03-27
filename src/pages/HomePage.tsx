@@ -18,6 +18,7 @@ import { useBookings } from "@/contexts/BookingsContext";
 import { useReviews } from "@/contexts/ReviewsContext";
 import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 import { useRestaurantStoryState } from "@/hooks/useRestaurantStoryState";
+import { getPreferredIdentifier } from "@/lib/authValidation";
 import {
   formatStoryAge,
   getRestaurantStoryGroups,
@@ -60,13 +61,14 @@ const HomePage = () => {
   const heroSubtitle = isGuest
     ? "Search restaurants and discover where to eat next."
     : "Search nearby restaurants and manage your bookings.";
-  const normalizedUserEmail = user?.email?.trim().toLowerCase() || "";
+  const currentUserIdentifier = getPreferredIdentifier(user?.email, user?.phone);
   const unreadCount = notifications.filter(
     (notification) =>
       notification.audience === "customer" &&
       !notification.read &&
-      normalizedUserEmail.length > 0 &&
-      notification.recipientEmail?.toLowerCase() === normalizedUserEmail,
+      currentUserIdentifier.length > 0 &&
+      (notification.recipientIdentifier ||
+        notification.recipientEmail?.toLowerCase()) === currentUserIdentifier,
   ).length;
 
   const categories = [

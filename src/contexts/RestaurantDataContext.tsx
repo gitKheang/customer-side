@@ -136,12 +136,28 @@ const normalizeMenuItems = (
     id: item.id ?? `${restaurantId}-menu-${index + 1}`,
   }));
 
+const normalizeSlotSortValue = (slot: string) => {
+  const match = slot.match(/^(\d{1,2}):(\d{2})(am|pm)$/i);
+  if (!match) return Number.MAX_SAFE_INTEGER;
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const period = match[3].toLowerCase();
+
+  if (period === "pm" && hours !== 12) hours += 12;
+  if (period === "am" && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+};
+
 const normalizeRestaurant = (restaurant: Restaurant): Restaurant => ({
   ...restaurant,
   menu: normalizeMenuItems(restaurant.id, restaurant.menu ?? []),
   tags: Array.isArray(restaurant.tags) ? restaurant.tags : [],
   availableSlots: Array.isArray(restaurant.availableSlots)
-    ? restaurant.availableSlots
+    ? Array.from(new Set(restaurant.availableSlots)).sort(
+        (a, b) => normalizeSlotSortValue(a) - normalizeSlotSortValue(b),
+      )
     : [],
   stories: Array.isArray(restaurant.stories) ? restaurant.stories : [],
 });
@@ -157,27 +173,19 @@ const buildRestaurantCollection = (restaurants: Restaurant[]) => {
     ...ownerRestaurantSeed,
     ...existingOwner,
     menu:
-      existingOwner &&
-      Array.isArray(existingOwner.menu) &&
-      existingOwner.menu.length > 0
+      existingOwner && Array.isArray(existingOwner.menu)
         ? existingOwner.menu
         : ownerRestaurantSeed.menu,
     tags:
-      existingOwner &&
-      Array.isArray(existingOwner.tags) &&
-      existingOwner.tags.length > 0
+      existingOwner && Array.isArray(existingOwner.tags)
         ? existingOwner.tags
         : ownerRestaurantSeed.tags,
     availableSlots:
-      existingOwner &&
-      Array.isArray(existingOwner.availableSlots) &&
-      existingOwner.availableSlots.length > 0
+      existingOwner && Array.isArray(existingOwner.availableSlots)
         ? existingOwner.availableSlots
         : ownerRestaurantSeed.availableSlots,
     stories:
-      existingOwner &&
-      Array.isArray(existingOwner.stories) &&
-      existingOwner.stories.length > 0
+      existingOwner && Array.isArray(existingOwner.stories)
         ? existingOwner.stories
         : ownerRestaurantSeed.stories,
   });

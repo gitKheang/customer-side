@@ -2,13 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
+  Clock3,
   Eye,
   ImagePlus,
   MapPin,
+  Plus,
   Save,
   Sparkles,
   Store,
   Tags,
+  X,
   UtensilsCrossed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,11 +28,39 @@ const parseCommaSeparated = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+const toSlotLabel = (value: string) => {
+  const [rawHours, minutes] = value.split(":");
+  const hours = Number(rawHours);
+  if (Number.isNaN(hours) || !minutes) return value;
+
+  const period = hours >= 12 ? "pm" : "am";
+  const normalizedHours = hours % 12 || 12;
+  return `${normalizedHours}:${minutes}${period}`;
+};
+
+const getSlotSortValue = (slot: string) => {
+  const match = slot.match(/^(\d{1,2}):(\d{2})(am|pm)$/i);
+  if (!match) return Number.MAX_SAFE_INTEGER;
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const period = match[3].toLowerCase();
+
+  if (period === "pm" && hours !== 12) hours += 12;
+  if (period === "am" && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+};
+
+const sortSlots = (slots: string[]) =>
+  [...slots].sort((a, b) => getSlotSortValue(a) - getSlotSortValue(b));
+
 const RestaurantEditListingPage = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { managedRestaurant, managedRestaurantId, updateManagedRestaurant } =
     useRestaurantData();
+  const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({
     name: managedRestaurant.name,
     cuisine: managedRestaurant.cuisine,
@@ -37,11 +68,12 @@ const RestaurantEditListingPage = () => {
     address: managedRestaurant.address,
     openUntil: managedRestaurant.openUntil,
     tags: toCommaSeparated(managedRestaurant.tags),
-    availableSlots: toCommaSeparated(managedRestaurant.availableSlots),
+    availableSlots: managedRestaurant.availableSlots,
     type: managedRestaurant.type,
     priceRange: managedRestaurant.priceRange,
     image: managedRestaurant.image,
   });
+  const [slotDraft, setSlotDraft] = useState("");
 
   useEffect(() => {
     setForm({
@@ -51,11 +83,12 @@ const RestaurantEditListingPage = () => {
       address: managedRestaurant.address,
       openUntil: managedRestaurant.openUntil,
       tags: toCommaSeparated(managedRestaurant.tags),
-      availableSlots: toCommaSeparated(managedRestaurant.availableSlots),
+      availableSlots: managedRestaurant.availableSlots,
       type: managedRestaurant.type,
       priceRange: managedRestaurant.priceRange,
       image: managedRestaurant.image,
     });
+    setSlotDraft("");
   }, [managedRestaurant]);
 
   const handleSave = () => {
@@ -69,9 +102,31 @@ const RestaurantEditListingPage = () => {
       type: form.type,
       priceRange: form.priceRange,
       tags: parseCommaSeparated(form.tags),
-      availableSlots: parseCommaSeparated(form.availableSlots),
+      availableSlots: sortSlots(form.availableSlots),
     });
-    navigate("/restaurant-dashboard");
+    setSaved(true);
+    setTimeout(() => navigate("/restaurant-dashboard"), 800);
+  };
+
+  const handleAddSlot = () => {
+    const normalizedSlot = toSlotLabel(slotDraft);
+    if (!slotDraft || form.availableSlots.includes(normalizedSlot)) {
+      setSlotDraft("");
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      availableSlots: sortSlots([...prev.availableSlots, normalizedSlot]),
+    }));
+    setSlotDraft("");
+  };
+
+  const handleRemoveSlot = (slotToRemove: string) => {
+    setForm((prev) => ({
+      ...prev,
+      availableSlots: prev.availableSlots.filter((slot) => slot !== slotToRemove),
+    }));
   };
 
   const handleCoverUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,10 +169,11 @@ const RestaurantEditListingPage = () => {
         <Button
           variant="ghost"
           size="sm"
-          className="text-xs font-semibold text-primary"
+          className={`text-xs font-semibold ${saved ? "text-success" : "text-primary"}`}
           onClick={handleSave}
+          disabled={saved}
         >
-          Save
+          {saved ? "Saved!" : "Save"}
         </Button>
       </div>
 
@@ -341,17 +397,54 @@ const RestaurantEditListingPage = () => {
               <label className="text-[11px] font-medium text-muted-foreground">
                 Bookable time slots
               </label>
-              <textarea
-                value={form.availableSlots}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    availableSlots: event.target.value,
-                  }))
-                }
-                className="mt-1.5 min-h-[88px] w-full rounded-2xl border border-input bg-background px-3 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-                placeholder="11:30am, 12:30pm, 6:00pm"
-              />
+              <div className="mt-1.5 rounded-2xl border border-input bg-background p-3">
+                <div className="flex items-center gap-2">
+                  <div className="relative min-w-0 flex-1">
+                    <Clock3 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="time"
+                      value={slotDraft}
+                      onChange={(event) => setSlotDraft(event.target.value)}
+                      className="h-11 rounded-2xl pl-9"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="cta"
+                    className="h-11 rounded-2xl px-4"
+                    onClick={handleAddSlot}
+                    disabled={!slotDraft}
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    Add
+                  </Button>
+                </div>
+
+                <p className="mt-2 text-[11px] leading-5 text-muted-foreground">
+                  Add one slot at a time. Customers will see these as the
+                  available booking times on your listing.
+                </p>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {form.availableSlots.length > 0 ? (
+                    form.availableSlots.map((slot) => (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => handleRemoveSlot(slot)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/8 px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-primary/12"
+                      >
+                        {slot}
+                        <X className="h-3.5 w-3.5 text-primary" />
+                      </button>
+                    ))
+                  ) : (
+                    <div className="rounded-2xl bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">
+                      No slots added yet
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -387,9 +480,10 @@ const RestaurantEditListingPage = () => {
           size="lg"
           className="mt-5 w-full rounded-2xl"
           onClick={handleSave}
+          disabled={saved}
         >
           <Save className="mr-2 h-4 w-4" />
-          Save listing changes
+          {saved ? "Saved!" : "Save listing changes"}
         </Button>
       </div>
 

@@ -6,6 +6,7 @@ import { ArrowLeft, BellOff, CheckCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { goBackOr } from "@/lib/navigation";
+import { getPreferredIdentifier } from "@/lib/authValidation";
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
@@ -15,12 +16,13 @@ const NotificationsPage = () => {
     markNotificationsRead,
   } = useBookings();
   const { user, isAuthenticated, isGuest } = useAuth();
-  const normalizedUserEmail = user?.email?.trim().toLowerCase() || "";
+  const currentUserIdentifier = getPreferredIdentifier(user?.email, user?.phone);
   const customerNotifications = notifications.filter(
     (notification) =>
       notification.audience === "customer" &&
-      normalizedUserEmail.length > 0 &&
-      notification.recipientEmail?.toLowerCase() === normalizedUserEmail,
+      currentUserIdentifier.length > 0 &&
+      (notification.recipientIdentifier ||
+        notification.recipientEmail?.toLowerCase()) === currentUserIdentifier,
   );
   const unreadCount = customerNotifications.filter(
     (notification) => !notification.read,

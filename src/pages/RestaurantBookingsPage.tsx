@@ -20,20 +20,6 @@ const statusColor: Record<ViewTab, string> = {
   cancelled: "bg-destructive/10 text-destructive",
 };
 
-const convertTo24h = (time12h: string) => {
-  const match = time12h.match(/^(\d{1,2}):(\d{2})(am|pm)$/i);
-  if (!match) return "00:00";
-  let hours = parseInt(match[1], 10);
-  const minutes = match[2];
-  const period = match[3].toLowerCase();
-  if (period === "pm" && hours !== 12) hours += 12;
-  if (period === "am" && hours === 12) hours = 0;
-  return `${hours.toString().padStart(2, "0")}:${minutes}`;
-};
-
-const getBookingDateTime = (date: string, time: string) =>
-  new Date(`${date}T${convertTo24h(time)}:00`);
-
 const RestaurantBookingsPage = () => {
   const { bookings, cancelBooking, completeBooking } = useBookings();
   const { managedRestaurant } = useRestaurantData();
@@ -42,30 +28,18 @@ const RestaurantBookingsPage = () => {
     (booking) => booking.restaurantId === managedRestaurant.id,
   );
 
-  const getDisplayStatus = (
-    booking: (typeof bookings)[number],
-  ): ViewTab => {
-    if (booking.status === "cancelled") return "cancelled";
-    if (booking.status === "completed") return "completed";
-
-    const bookingDateTime = getBookingDateTime(booking.date, booking.time);
-    const now = new Date();
-    if (!Number.isNaN(bookingDateTime.getTime()) && bookingDateTime < now) {
-      return "completed";
-    }
-    return "upcoming";
-  };
-
   const filtered = restaurantBookings.filter(
-    (booking) => getDisplayStatus(booking) === activeTab,
+    (booking) => booking.status === activeTab,
   );
 
   const countFor = (s: ViewTab) =>
-    restaurantBookings.filter((booking) => getDisplayStatus(booking) === s)
-      .length;
+    restaurantBookings.filter((booking) => booking.status === s).length;
 
   const handleComplete = (id: string) => {
-    completeBooking(id);
+    const result = completeBooking(id);
+    if (!result.success) {
+      window.alert(result.message);
+    }
   };
 
   const handleCancel = (id: string) => {
@@ -73,7 +47,10 @@ const RestaurantBookingsPage = () => {
       "Cancel this reservation? This action cannot be undone.",
     );
     if (!shouldCancel) return;
-    cancelBooking(id);
+    const result = cancelBooking(id);
+    if (!result.success) {
+      window.alert(result.message);
+    }
   };
 
   return (
@@ -121,7 +98,7 @@ const RestaurantBookingsPage = () => {
         ) : (
           <div className="space-y-3">
             {filtered.map((booking, i) => {
-              const displayStatus = getDisplayStatus(booking);
+              const displayStatus = booking.status as ViewTab;
               return (
                 <motion.div
                   key={booking.id}

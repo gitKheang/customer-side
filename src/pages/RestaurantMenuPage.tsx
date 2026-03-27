@@ -71,6 +71,7 @@ const RestaurantMenuPage = () => {
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [draft, setDraft] = useState<MenuDraft>(emptyDraft);
+  const [menuError, setMenuError] = useState("");
 
   const items = managedRestaurant.menu;
   const filtered = useMemo(() => {
@@ -115,6 +116,7 @@ const RestaurantMenuPage = () => {
     setIsComposerOpen(false);
     setEditingItemId(null);
     setDraft(emptyDraft);
+    setMenuError("");
   };
 
   const handleSaveItem = () => {
@@ -127,7 +129,15 @@ const RestaurantMenuPage = () => {
       status: draft.status,
     };
 
-    if (!payload.name || !payload.price) return;
+    if (!payload.name) {
+      setMenuError("Dish name is required");
+      return;
+    }
+    if (!payload.price || payload.price === "$") {
+      setMenuError("A valid price is required (e.g. $7.50)");
+      return;
+    }
+    setMenuError("");
 
     if (editingItemId) {
       updateMenuItem(editingItemId, payload);
@@ -322,6 +332,9 @@ const RestaurantMenuPage = () => {
                 <option value="time_based">Time Based</option>
               </select>
 
+              {menuError && (
+                <p className="text-xs font-medium text-destructive">{menuError}</p>
+              )}
               <Button
                 type="button"
                 variant="cta"

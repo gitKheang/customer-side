@@ -26,6 +26,7 @@ const ProfilePage = () => {
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");
   const [editing, setEditing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Guest mode restriction
   if (isGuest && !isAuthenticated) {
@@ -87,8 +88,14 @@ const ProfilePage = () => {
   ];
 
   const handleSave = () => {
+    const result = updateProfile({ name, email, phone });
+    if (!result.success) {
+      setErrorMessage(result.message);
+      return;
+    }
+
+    setErrorMessage("");
     setEditing(false);
-    updateProfile({ name, email, phone });
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -194,20 +201,30 @@ const ProfilePage = () => {
             </div>
 
             {editing ? (
-              <Button
-                variant="cta"
-                size="default"
-                className="w-full"
-                onClick={handleSave}
-              >
-                Save Changes
-              </Button>
+              <>
+                <Button
+                  variant="cta"
+                  size="default"
+                  className="w-full"
+                  onClick={handleSave}
+                >
+                  Save Changes
+                </Button>
+                {errorMessage ? (
+                  <p className="text-xs font-medium text-destructive">
+                    {errorMessage}
+                  </p>
+                ) : null}
+              </>
             ) : (
               <Button
                 variant="outline"
                 size="default"
                 className="w-full"
-                onClick={() => setEditing(true)}
+                onClick={() => {
+                  setErrorMessage("");
+                  setEditing(true);
+                }}
               >
                 Edit Profile
               </Button>

@@ -3,6 +3,8 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Users,
   Minus,
@@ -17,7 +19,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBookings } from "@/contexts/BookingsContext";
 import { useRestaurantData } from "@/contexts/RestaurantDataContext";
 import { goBackOr } from "@/lib/navigation";
-import { EMAIL_REGEX } from "@/lib/authValidation";
+import {
+  EMAIL_REGEX,
+  getPreferredIdentifier,
+  normalizeIdentifier,
+} from "@/lib/authValidation";
 import {
   formatDateISO,
   getBookableSlots,
@@ -37,6 +43,7 @@ interface BookTableLocationState {
   mode?: "modify";
   bookingId?: string;
   fromHistory?: boolean;
+  preselectedTime?: string;
 }
 
 const BookTablePage = () => {
@@ -47,7 +54,7 @@ const BookTablePage = () => {
   const { bookings, addBooking, updateBooking } = useBookings();
   const { getRestaurantById } = useRestaurantData();
   const restaurant = getRestaurantById(id || "");
-  const normalizedUserEmail = user?.email?.trim().toLowerCase() || "";
+  const currentUserIdentifier = getPreferredIdentifier(user?.email, user?.phone);
   const pageState = (location.state as BookTableLocationState | null) ?? null;
   const bookingToModify =
     pageState?.mode === "modify" && pageState.bookingId
@@ -56,8 +63,10 @@ const BookTablePage = () => {
             booking.id === pageState.bookingId &&
             booking.restaurantId === id &&
             booking.status === "upcoming" &&
-            normalizedUserEmail.length > 0 &&
-            booking.bookingEmail.toLowerCase() === normalizedUserEmail,
+            currentUserIdentifier.length > 0 &&
+            (booking.customerIdentifier ||
+              normalizeIdentifier(booking.bookingEmail)) ===
+              currentUserIdentifier,
         )
       : undefined;
   const isModifyMode = !!bookingToModify;
@@ -66,8 +75,13 @@ const BookTablePage = () => {
   const [selectedDate, setSelectedDate] = useState(
     bookingToModify?.date ?? formatDateISO(new Date()),
   );
-  const [selectedTime, setSelectedTime] = useState(bookingToModify?.time ?? "");
+  const [selectedTime, setSelectedTime] = useState(
+    bookingToModify?.time ?? pageState?.preselectedTime ?? "",
+  );
   const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(
+    bookingToModify?.date ?? formatDateISO(new Date()),
+  );
   const [specialRequests, setSpecialRequests] = useState(
     bookingToModify?.specialRequests ?? "",
   );
@@ -113,14 +127,24 @@ const BookTablePage = () => {
   }
 
   const selectedDateObj = new Date(`${selectedDate}T00:00:00`);
-  const calendarYear = selectedDateObj.getFullYear();
-  const calendarMonth = selectedDateObj.getMonth();
-  const monthNameFull = selectedDateObj.toLocaleString("default", {
+  const calendarDateObj = new Date(`${calendarDate}T00:00:00`);
+  const calendarYear = calendarDateObj.getFullYear();
+  const calendarMonth = calendarDateObj.getMonth();
+  const monthNameFull = calendarDateObj.toLocaleString("default", {
     month: "long",
   });
   const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(calendarYear, calendarMonth, 1).getDay();
   const calendarDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  const navigateCalendarMonth = (delta: number) => {
+    const d = new Date(calendarYear, calendarMonth + delta, 1);
+    setCalendarDate(formatDateISO(d));
+  };
+  const todayObj = new Date();
+  todayObj.setHours(0, 0, 0, 0);
+  const canGoPrevMonth =
+    new Date(calendarYear, calendarMonth, 1) > todayObj;
 
   const weekDays = Array.from({ length: 5 }, (_, i) => {
     const day = new Date();
@@ -182,6 +206,8 @@ const BookTablePage = () => {
     } else {
       addBooking({
         bookingReference,
+        customerIdentifier:
+          currentUserIdentifier || normalizeIdentifier(bookingEmail.trim()),
         restaurantId: restaurant.id,
         restaurantName: restaurant.name,
         restaurantImage: restaurant.image,
@@ -285,7 +311,7 @@ const BookTablePage = () => {
                 {weekDays.map((day) => (
                   <button
                     key={day.iso}
-                    onClick={() => setSelectedDate(day.iso)}
+                    onClick={() => { setSelectedDate(day.iso); setSelectedTime(""); }}
                     className={`flex flex-col items-center rounded-2xl border px-4 py-2.5 min-w-[72px] transition-all active:scale-95 ${
                       selectedDate === day.iso
                         ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
@@ -304,9 +330,26 @@ const BookTablePage = () => {
                 animate={{ opacity: 1, height: "auto" }}
                 className="mt-3"
               >
-                <p className="text-center text-sm font-bold text-foreground mb-3">
-                  {monthNameFull} {calendarYear}
-                </p>
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    type="button"
+                    disabled={!canGoPrevMonth}
+                    onClick={() => navigateCalendarMonth(-1)}
+                    className="rounded-full p-1.5 hover:bg-secondary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-4 w-4 text-foreground" />
+                  </button>
+                  <p className="text-sm font-bold text-foreground">
+                    {monthNameFull} {calendarYear}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => navigateCalendarMonth(1)}
+                    className="rounded-full p-1.5 hover:bg-secondary transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4 text-foreground" />
+                  </button>
+                </div>
                 <div className="grid grid-cols-7 gap-1 text-center">
                   {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
                     <span
@@ -332,6 +375,7 @@ const BookTablePage = () => {
                         disabled={isPast}
                         onClick={() => {
                           setSelectedDate(dayIso);
+                          setSelectedTime("");
                           setShowCalendar(false);
                         }}
                         className={`rounded-full py-2 text-xs font-medium transition-all ${
@@ -399,7 +443,7 @@ const BookTablePage = () => {
               </p>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setGuests(Math.max(1, guests - 1))}
+                  onClick={() => { setGuests(Math.max(1, guests - 1)); setSelectedTime(""); }}
                   className="rounded-full border border-border p-2 hover:bg-secondary transition-colors active:scale-90"
                 >
                   <Minus className="h-4 w-4 text-foreground" />
@@ -408,7 +452,7 @@ const BookTablePage = () => {
                   {guests}
                 </span>
                 <button
-                  onClick={() => setGuests(Math.min(20, guests + 1))}
+                  onClick={() => { setGuests(Math.min(20, guests + 1)); setSelectedTime(""); }}
                   className="rounded-full bg-primary p-2 shadow-md shadow-primary/20 active:scale-90 transition-transform"
                 >
                   <Plus className="h-4 w-4 text-primary-foreground" />
