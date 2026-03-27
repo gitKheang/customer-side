@@ -70,7 +70,6 @@ const RestaurantDetailPage = () => {
     hasUserReviewed,
   } = useReviews();
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [showMenu, setShowMenu] = useState(false);
   const [showMoreInfo, setShowMoreInfo] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
@@ -186,17 +185,15 @@ const RestaurantDetailPage = () => {
   };
 
   const handleMoreInfo = () => {
-    if (!showMoreInfo) {
-      setShowMoreInfo(true);
-      window.setTimeout(() => {
-        const section = document.getElementById("restaurant-more-info");
-        section?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 120);
-      return;
-    }
-
-    const section = document.getElementById("restaurant-more-info");
-    section?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setShowMoreInfo((prev) => {
+      if (!prev) {
+        window.setTimeout(() => {
+          const section = document.getElementById("restaurant-more-info");
+          section?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 120);
+      }
+      return !prev;
+    });
   };
 
   const openDirections = () => {
@@ -209,12 +206,12 @@ const RestaurantDetailPage = () => {
   };
 
   return (
-    <div className="relative flex h-full flex-col bg-background">
-      <div className="relative h-[40%] min-h-[320px]">
+    <div className="relative h-full overflow-y-auto bg-background scrollbar-hide">
+      <div className="relative min-h-[360px]">
         <img
           src={restaurant.image}
           alt={restaurant.name}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover absolute inset-0"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/30 to-transparent" />
 
@@ -286,7 +283,7 @@ const RestaurantDetailPage = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide -mt-2">
+      <div className="-mt-2">
         <div className="rounded-t-3xl bg-background pt-6 px-5 pb-5 space-y-5">
           <div id="restaurant-description">
             <h3 className="text-sm font-bold text-foreground">
@@ -581,14 +578,6 @@ const RestaurantDetailPage = () => {
 
           <div className="flex gap-3 pt-1 pb-4">
             <Button
-              variant="outline"
-              size="lg"
-              className="flex-1"
-              onClick={() => setShowMenu(!showMenu)}
-            >
-              Food Menu
-            </Button>
-            <Button
               variant="cta"
               size="lg"
               className="flex-1"
@@ -606,44 +595,38 @@ const RestaurantDetailPage = () => {
             </Button>
           </div>
 
-          {showMenu && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="rounded-2xl border border-border overflow-hidden mb-4"
-            >
-              <div className="bg-secondary/50 px-4 py-3 border-b border-border">
-                <h3 className="text-sm font-bold text-foreground">Menu</h3>
-              </div>
-              <div className="divide-y divide-border">
-                {restaurant.menu.map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between gap-3 px-4 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="h-11 w-11 rounded-lg object-cover"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {item.name}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {item.category}
-                        </p>
-                      </div>
+          <div className="rounded-2xl border border-border overflow-hidden mb-4">
+            <div className="bg-secondary/50 px-4 py-3 border-b border-border">
+              <h3 className="text-sm font-bold text-foreground">Menu</h3>
+            </div>
+            <div className="divide-y divide-border">
+              {restaurant.menu.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-3 px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="h-11 w-11 rounded-lg object-cover"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {item.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {item.category}
+                      </p>
                     </div>
-                    <span className="text-sm font-bold text-primary">
-                      {item.price}
-                    </span>
                   </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+                  <span className="text-sm font-bold text-primary">
+                    {item.price}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
