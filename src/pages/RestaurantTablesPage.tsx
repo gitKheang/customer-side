@@ -75,9 +75,9 @@ const RestaurantTablesPage = () => {
 
   const statusBadge = (status: Table["status"]) => {
     const styles = {
-      available: "bg-success/10 text-success",
-      occupied: "bg-primary/10 text-primary",
-      booked: "bg-destructive/10 text-destructive",
+      available: "border border-success/30 text-success",
+      occupied: "border border-primary/30 text-primary",
+      booked: "border border-destructive/30 text-destructive",
     };
     return (
       <span
@@ -106,25 +106,25 @@ const RestaurantTablesPage = () => {
       <div className="flex-1 overflow-y-auto px-5 pb-28 scrollbar-hide">
         {/* Summary cards */}
         <div className="mb-4 grid grid-cols-3 gap-2.5">
-          <div className="rounded-2xl bg-emerald-50 px-3 py-2.5">
-            <p className="text-[20px] font-bold text-emerald-600">
+          <div className="rounded-2xl px-3 py-2.5" style={{ border: "1.5px solid hsl(47 70% 72%)" }}>
+            <p className="text-[20px] font-bold" style={{ color: "hsl(47 80% 38%)" }}>
               {counts.available}
             </p>
-            <p className="text-[11px] font-medium text-emerald-600">
+            <p className="text-[11px] font-medium" style={{ color: "hsl(47 75% 42%)" }}>
               Available
             </p>
           </div>
-          <div className="rounded-2xl bg-red-50 px-3 py-2.5">
-            <p className="text-[20px] font-bold text-red-600">
+          <div className="rounded-2xl px-3 py-2.5" style={{ border: "1.5px solid hsl(47 70% 72%)" }}>
+            <p className="text-[20px] font-bold" style={{ color: "hsl(47 80% 38%)" }}>
               {counts.booked}
             </p>
-            <p className="text-[11px] font-medium text-red-600">Booked</p>
+            <p className="text-[11px] font-medium" style={{ color: "hsl(47 75% 42%)" }}>Booked</p>
           </div>
-          <div className="rounded-2xl bg-primary/10 px-3 py-2.5">
-            <p className="text-[20px] font-bold text-primary">
+          <div className="rounded-2xl px-3 py-2.5" style={{ border: "1.5px solid hsl(47 70% 72%)" }}>
+            <p className="text-[20px] font-bold" style={{ color: "hsl(47 80% 38%)" }}>
               {counts.guests}
             </p>
-            <p className="text-[11px] font-medium text-primary">Guests</p>
+            <p className="text-[11px] font-medium" style={{ color: "hsl(47 75% 42%)" }}>Guests</p>
           </div>
         </div>
 
@@ -186,7 +186,7 @@ const RestaurantTablesPage = () => {
                 <button
                   type="button"
                   onClick={() => handleDelete(table.id)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-transform hover:scale-110 active:scale-95"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-destructive/30 text-destructive transition-transform hover:scale-110 active:scale-95"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>

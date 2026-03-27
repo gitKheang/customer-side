@@ -15,9 +15,9 @@ const tabs: { label: string; value: ViewTab }[] = [
 ];
 
 const statusColor: Record<ViewTab, string> = {
-  upcoming: "bg-primary/10 text-primary",
-  completed: "bg-success/10 text-success",
-  cancelled: "bg-destructive/10 text-destructive",
+  upcoming: "border border-primary/30 text-primary",
+  completed: "border border-success/30 text-success",
+  cancelled: "border border-destructive/30 text-destructive",
 };
 
 const RestaurantBookingsPage = () => {
@@ -173,7 +173,7 @@ const RestaurantBookingsPage = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1 rounded-xl text-xs text-destructive border-destructive/20 hover:bg-destructive/5"
+                        className="flex-1 rounded-xl text-xs text-destructive border-destructive/30 hover:bg-destructive hover:text-white hover:border-destructive active:scale-[0.97] transition-all"
                         onClick={() => handleCancel(booking.id)}
                       >
                         <X className="mr-1 h-3 w-3" />
